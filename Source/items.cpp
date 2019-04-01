@@ -9,7 +9,7 @@ ItemStruct curruitem;
 ItemGetRecordStruct itemrecord[MAXITEMS];
 ItemStruct item[MAXITEMS + 1];
 BOOL itemhold[3][3];
-unsigned char *Item2Frm[35];
+unsigned char *itemanims[35];
 int UniqueItemFlag[128];
 int numitems;
 int gnNumGetRecords;
@@ -643,25 +643,28 @@ void __cdecl InitItemGFX()
 	v0 = 0;
 	do {
 		sprintf(arglist, "Items\\%s.CEL", ItemDropStrs[v0]);
-		Item2Frm[v0] = LoadFileInMem(arglist, 0);
+		itemanims[v0] = LoadFileInMem(arglist, 0);
 		++v0;
 	} while (v0 < 35);
 	memset(UniqueItemFlag, 0, sizeof(UniqueItemFlag));
 }
 
-BOOLEAN __fastcall ItemPlace(int xp, int yp)
+BOOL __fastcall ItemPlace(int xp, int yp)
 {
-	int v2;         // ecx
-	int v3;         // eax
-	BOOLEAN result; // al
+	if (dMonster[xp][yp])
+		return FALSE;
+	if (dPlayer[xp][yp])
+		return FALSE;
+	if (dItem[xp][yp])
+		return FALSE;
+	if (dObject[xp][yp])
+		return FALSE;
+	if (dFlags[xp][yp] & DFLAG_POPULATED)
+		return FALSE;
+	if (nSolidTable[dPiece[xp][yp]])
+		return FALSE;
 
-	v2 = xp;
-	v3 = v2 * 112 + yp;
-	if (dMonster[0][v3] || dPlayer[v2][yp] || dItem[v2][yp] || dObject[v2][yp] || dFlags[v2][yp] & DFLAG_POPULATED)
-		result = 0;
-	else
-		result = nSolidTable[dPiece[0][v3]] == 0;
-	return result;
+	return TRUE;
 }
 
 void __cdecl AddInitItems()
@@ -694,7 +697,7 @@ void __cdecl AddInitItems()
 				GetItemAttrs(ii, IDI_MANA, currlevel);
 			item[ii]._iCreateInfo = currlevel + -32768;
 			SetupItem(ii);
-			item[ii]._iAnimFlag = 0;
+			item[ii]._iAnimFlag = FALSE;
 			item[ii]._iAnimFrame = item[ii]._iAnimLen;
 			item[ii]._iSelFlag = 1;
 			DeltaAddItem(ii);
@@ -1164,41 +1167,39 @@ void __fastcall CalcSelfItems(int pnum)
 
 void __fastcall CalcPlrItemMin(int pnum)
 {
-	PlayerStruct *v1; // ecx
-	PlayerStruct *v2; // esi
-	ItemStruct *v3;   // edi
-	int v4;           // ebp
-	ItemStruct *v6;   // edi
-	signed int v7;    // ebp
+	PlayerStruct *p;
+	ItemStruct *pi;
+	int i;
 
-	v1 = &plr[pnum];
-	v2 = v1;
-	v3 = v1->InvList;
-	if (v1->_pNumInv) {
-		v4 = v1->_pNumInv;
-		do {
-			v3->_iStatFlag = ItemMinStats(v2, v3);
-			++v3;
-			--v4;
-		} while (v4);
+	p = &plr[pnum];
+	pi = p->InvList;
+
+	for (i = p->_pNumInv; i; i--) {
+		pi->_iStatFlag = ItemMinStats(p, pi);
+		pi++;
 	}
-	v6 = v2->SpdList;
-	v7 = MAXBELTITEMS;
-	do {
-		if (v6->_itype != -1) {
-			v6->_iStatFlag = ItemMinStats(v2, v6);
+
+	pi = p->SpdList;
+	for (i = MAXBELTITEMS; i != 0; i--) {
+		if (pi->_itype != -1) {
+			pi->_iStatFlag = ItemMinStats(p, pi);
 		}
-		++v6;
-		--v7;
-	} while (v7);
+		pi++;
+	}
 }
 
-BOOLEAN __fastcall ItemMinStats(PlayerStruct *p, ItemStruct *x)
+BOOL __fastcall ItemMinStats(PlayerStruct *p, ItemStruct *x)
 {
-	if (p->_pStrength < x->_iMinStr || p->_pMagic < x->_iMinMag || p->_pDexterity < x->_iMinDex)
-		return 0;
-	else
-		return 1;
+	if (p->_pMagic < x->_iMinMag)
+		return FALSE;
+
+	if (p->_pStrength < x->_iMinStr)
+		return FALSE;
+
+	if (p->_pDexterity < x->_iMinDex)
+		return FALSE;
+
+	return TRUE;
 }
 
 void __fastcall CalcPlrBookVals(int p)
@@ -1457,49 +1458,40 @@ void __fastcall CreatePlrItems(int p)
 
 BOOL __fastcall ItemSpaceOk(int i, int j)
 {
-	int v2;     // eax
-	int v3;     // esi
-	char v4;    // cl
-	int v5;     // ecx
-	char v6;    // cl
-	BOOLEAN v7; // sf
-	char v8;    // cl
-	char v9;    // al
+	int oi;
 
-	if (i < 0)
-		return 0;
-	if (i >= MAXDUNX)
-		return 0;
-	if (j < 0)
-		return 0;
-	if (j >= MAXDUNY)
-		return 0;
-	v2 = i;
-	v3 = 112 * i + j;
-	if (dMonster[0][v3] || dPlayer[v2][j] || dItem[v2][j])
-		return 0;
-	v4 = dObject[v2][j];
-	if (v4) {
-		v5 = v4 <= 0 ? -1 - v4 : v4 - 1;
-		if (object[v5]._oSolidFlag)
-			return 0;
+	if (i < 0 || i >= MAXDUNX || j < 0 || j >= MAXDUNY)
+		return FALSE;
+
+	if (dMonster[i][j])
+		return FALSE;
+
+	if (dPlayer[i][j])
+		return FALSE;
+
+	if (dItem[i][j])
+		return FALSE;
+
+	if (dObject[i][j]) {
+		oi = dObject[i][j] > 0 ? dObject[i][j] - 1 : -(dObject[i][j] + 1) ;
+		if (object[oi]._oSolidFlag)
+			return FALSE;
 	}
-	v6 = dObject[v2 + 1][j + 1];
-	v7 = v6 < 0;
-	if (v6 > 0) {
-		if (object[v6 - 1]._oSelFlag) /* check */
-			return 0;
-		v7 = v6 < 0;
+
+	if (dObject[i + 1][j + 1] > 0 && object[dObject[i + 1][j + 1] - 1]._oSelFlag)
+		return FALSE;
+
+	if (dObject[i + 1][j + 1] < 0 && object[-(dObject[i + 1][j + 1] + 1)]._oSelFlag)
+		return FALSE;
+
+	if (dObject[i + 1][j] > 0
+	    && dObject[i][j + 1] > 0
+	    && object[dObject[i + 1][j] - 1]._oSelFlag
+	    && object[dObject[i][j + 1] - 1]._oSelFlag) {
+		return FALSE;
 	}
-	if (!v7 || !object[-(v6 + 1)]._oSelFlag) {
-		v8 = dObject[v2 + 1][j];
-		if (v8 <= 0)
-			return nSolidTable[dPiece[0][v3]] == 0;
-		v9 = dObject[v2][j + 1];
-		if (v9 <= 0 || !object[v8 - 1]._oSelFlag || !object[v9 - 1]._oSelFlag)
-			return nSolidTable[dPiece[0][v3]] == 0;
-	}
-	return 0;
+
+	return !nSolidTable[dPiece[i][j]];
 }
 
 BOOL __fastcall GetItemSpace(int x, int y, char inum)
@@ -1846,7 +1838,7 @@ void __fastcall GetStaffSpell(int i, int lvl, unsigned char onlygood)
 
 void __fastcall GetItemAttrs(int i, int idata, int lvl)
 {
-	int rndv; // eax
+	int rndv;
 
 	item[i]._itype = AllItemsList[idata].itype;
 	item[i]._iCurs = AllItemsList[idata].iCurs;
@@ -1856,19 +1848,14 @@ void __fastcall GetItemAttrs(int i, int idata, int lvl)
 	item[i]._iClass = AllItemsList[idata].iClass;
 	item[i]._iMinDam = AllItemsList[idata].iMinDam;
 	item[i]._iMaxDam = AllItemsList[idata].iMaxDam;
-	item[i]._iMiscId = AllItemsList[idata].iMiscId;
 	item[i]._iAC = AllItemsList[idata].iMinAC + random(20, AllItemsList[idata].iMaxAC - AllItemsList[idata].iMinAC + 1);
 	item[i]._iFlags = AllItemsList[idata].iFlags;
+	item[i]._iMiscId = AllItemsList[idata].iMiscId;
 	item[i]._iSpell = AllItemsList[idata].iSpell;
+	item[i]._iMagical = ITEM_QUALITY_NORMAL;
 	item[i]._ivalue = AllItemsList[idata].iValue;
 	item[i]._iIvalue = AllItemsList[idata].iValue;
-	item[i]._iMagical = ITEM_QUALITY_NORMAL;
-	item[i]._iDurability = AllItemsList[idata].iDurability;
-	item[i]._iMaxDur = AllItemsList[idata].iDurability;
 	item[i]._iVAdd1 = 0;
-	item[i]._iMinStr = AllItemsList[idata].iMinStr;
-	item[i]._iMinMag = AllItemsList[idata].iMinMag;
-	item[i]._iMinDex = AllItemsList[idata].iMinDex;
 	item[i]._iVMult1 = 0;
 	item[i]._iVAdd2 = 0;
 	item[i]._iVMult2 = 0;
@@ -1881,6 +1868,11 @@ void __fastcall GetItemAttrs(int i, int idata, int lvl)
 	item[i]._iPLVit = 0;
 	item[i]._iCharges = 0;
 	item[i]._iMaxCharges = 0;
+	item[i]._iDurability = AllItemsList[idata].iDurability;
+	item[i]._iMaxDur = AllItemsList[idata].iDurability;
+	item[i]._iMinStr = AllItemsList[idata].iMinStr;
+	item[i]._iMinMag = AllItemsList[idata].iMinMag;
+	item[i]._iMinDex = AllItemsList[idata].iMinDex;
 	item[i]._iPLFR = 0;
 	item[i]._iPLLR = 0;
 	item[i]._iPLMR = 0;
@@ -1889,8 +1881,6 @@ void __fastcall GetItemAttrs(int i, int idata, int lvl)
 	item[i]._iPLGetHit = 0;
 	item[i]._iPLLight = 0;
 	item[i]._iSplLvlAdd = 0;
-	item[i]._iPrePower = -1;
-	item[i]._iSufPower = -1;
 	item[i]._iRequest = FALSE;
 	item[i]._iFMinDam = 0;
 	item[i]._iFMaxDam = 0;
@@ -1899,15 +1889,17 @@ void __fastcall GetItemAttrs(int i, int idata, int lvl)
 	item[i]._iPLEnAc = 0;
 	item[i]._iPLMana = 0;
 	item[i]._iPLHP = 0;
+	item[i]._iPrePower = -1;
+	item[i]._iSufPower = -1;
 
 	if (AllItemsList[idata].iMiscId == IMISC_BOOK)
 		GetBookSpell(i, lvl);
 
 	if (item[i]._itype == ITYPE_GOLD) {
-		if (gnDifficulty) /* clean this up, NORMAL */
-			rndv = lvl;
-		else
+		if (gnDifficulty == DIFF_NORMAL)
 			rndv = 5 * currlevel + random(21, 10 * currlevel);
+		else
+			rndv = lvl;
 
 		if (gnDifficulty == DIFF_NIGHTMARE)
 			rndv = 5 * (currlevel + 16) + random(21, 10 * (currlevel + 16));
@@ -1921,13 +1913,13 @@ void __fastcall GetItemAttrs(int i, int idata, int lvl)
 
 		item[i]._ivalue = rndv;
 
-		if (rndv < 2500)
-			item[i]._iCurs = (rndv > 1000) + 4;
-		else
+		if (rndv >= 2500)
 			item[i]._iCurs = ICURS_GOLD_LARGE;
+		else
+			item[i]._iCurs = (rndv > 1000) + 4;
 	}
 }
-// 5BB1ED: using guessed type char leveltype;
+
 
 int __fastcall RndPL(int param1, int param2)
 {
@@ -2318,8 +2310,6 @@ void __fastcall SaveItemPower(int i, int power, int param1, int param2, int minv
 	LABEL_62:
 		*v12 -= v10;
 		break;
-	default:
-		break;
 	}
 	v43 = v8;
 	if (item[v43]._iVAdd1 || item[v43]._iVMult1) {
@@ -2467,32 +2457,29 @@ void __fastcall GetItemBonus(int i, int idata, int minlvl, int maxlvl, int onlyg
 		case ITYPE_AMULET:
 			GetItemPower(i, minlvl, maxlvl, 1, onlygood);
 			break;
-		default:
-			return;
 		}
 	}
 }
 
 void __fastcall SetupItem(int i)
 {
-	int it; // eax
-	int il; // eax
+	int it, il;
 
 	it = ItemCAnimTbl[item[i]._iCurs];
 	item[i]._iAnimWidth = 96;
 	item[i]._iAnimWidth2 = 16;
+	item[i]._iAnimData = itemanims[it];
 	il = ItemAnimLs[it];
-	item[i]._iAnimData = Item2Frm[it];
 	item[i]._iAnimLen = il;
 	item[i]._iIdentified = FALSE;
-	item[i]._iPostDraw = 0;
+	item[i]._iPostDraw = FALSE;
 
 	if (!plr[myplr].pLvlLoad) {
 		item[i]._iSelFlag = 0;
 		il = 1;
-		item[i]._iAnimFlag = 1;
+		item[i]._iAnimFlag = TRUE;
 	} else {
-		item[i]._iAnimFlag = 0;
+		item[i]._iAnimFlag = FALSE;
 		item[i]._iSelFlag = 1;
 	}
 
@@ -3031,58 +3018,42 @@ void __fastcall RecreateEar(int ii, unsigned short ic, int iseed, int Id, int du
 
 void __fastcall SpawnQuestItem(int itemid, int x, int y, int randarea, int selflag)
 {
-	int i;       // ebx
-	BOOL failed; // eax
-	int j;       // esi
-	int v12;     // ebx
-	int v13;     // esi
-	int tries;   // [esp+10h] [ebp-4h]
+	BOOL failed;
+	int i, j, tries;
 
 	if (randarea) {
 		tries = 0;
 		while (1) {
-		LABEL_3:
-			if (++tries > 1000 && randarea > 1)
-				--randarea;
-
+			tries++;
+			if (tries > 1000 && randarea > 1)
+				randarea--;
 			x = random(0, MAXDUNX);
 			y = random(0, MAXDUNY);
-			i = 0;
-			failed = 0;
-			if (randarea <= 0)
-				break;
-			while (!failed) {
-				for (j = 0; j < randarea; j++) {
-					if (failed)
-						break;
-
-					failed = ItemSpaceOk(i + x, j + y) == 0;
-				}
-
-				if (++i >= randarea) {
-					if (failed)
-						goto LABEL_3;
-					goto LABEL_13;
+			failed = FALSE;
+			for (i = 0; i < randarea && !failed; i++) {
+				for (j = 0; j < randarea && !failed; j++) {
+					failed = !ItemSpaceOk(i + x, j + y);
 				}
 			}
+			if (!failed)
+				break;
 		}
 	}
-LABEL_13:
+
 	if (numitems < MAXITEMS) {
-		v12 = itemavail[0];
-		v13 = itemavail[0];
-		item[v13]._ix = x;
-		itemactive[numitems] = v12;
-		item[v13]._iy = y;
+		i = itemavail[0];
 		itemavail[0] = itemavail[MAXITEMS - numitems - 1];
-		dItem[x][y] = v12 + 1;
-		GetItemAttrs(v12, itemid, currlevel);
-		SetupItem(v12);
-		item[v13]._iPostDraw = 1;
+		itemactive[numitems] = i;
+		item[i]._ix = x;
+		item[i]._iy = y;
+		dItem[x][y] = i + 1;
+		GetItemAttrs(i, itemid, currlevel);
+		SetupItem(i);
+		item[i]._iPostDraw = TRUE;
 		if (selflag) {
-			item[v13]._iAnimFlag = 0;
-			item[v13]._iSelFlag = selflag;
-			item[v13]._iAnimFrame = item[v13]._iAnimLen;
+			item[i]._iAnimFlag = FALSE;
+			item[i]._iSelFlag = selflag;
+			item[i]._iAnimFrame = item[i]._iAnimLen;
 		}
 		++numitems;
 	}
@@ -3133,7 +3104,7 @@ void __cdecl SpawnRock()
 		SetupItem(v4);
 		++numitems;
 		item[v6]._iSelFlag = 2;
-		item[v6]._iPostDraw = 1;
+		item[v6]._iPostDraw = TRUE;
 		item[v6]._iAnimFrame = 11;
 	}
 }
@@ -3148,16 +3119,16 @@ void __fastcall RespawnItem(int i, BOOL FlipFlag)
 	it = ItemCAnimTbl[item[i]._iCurs];
 	il = ItemAnimLs[it];
 	item[i]._iAnimLen = il;
-	item[i]._iAnimData = Item2Frm[it];
-	item[i]._iPostDraw = 0;
+	item[i]._iAnimData = itemanims[it];
+	item[i]._iPostDraw = FALSE;
 	item[i]._iRequest = FALSE;
 
 	if (FlipFlag) {
 		item[i]._iSelFlag = 0;
 		il = 1;
-		item[i]._iAnimFlag = 1;
+		item[i]._iAnimFlag = TRUE;
 	} else {
-		item[i]._iAnimFlag = 0;
+		item[i]._iAnimFlag = FALSE;
 		item[i]._iSelFlag = 1;
 	}
 
@@ -3228,7 +3199,7 @@ void __cdecl ProcessItems()
 					PlaySfxLoc(ItemDropSnds[ItemCAnimTbl[item[ii]._iCurs]], item[ii]._ix, item[ii]._iy);
 
 				if (item[ii]._iAnimFrame >= item[ii]._iAnimLen) {
-					item[ii]._iAnimFlag = 0;
+					item[ii]._iAnimFlag = FALSE;
 					item[ii]._iAnimFrame = item[ii]._iAnimLen;
 					item[ii]._iSelFlag = 1;
 				}
@@ -3244,15 +3215,15 @@ void __cdecl FreeItemGFX()
 	void *v1; // ecx
 
 	for (i = 0; i < 35; i++) {
-		v1 = (void *)Item2Frm[i];
-		Item2Frm[i] = 0;
+		v1 = (void *)itemanims[i];
+		itemanims[i] = 0;
 		mem_free_dbg(v1);
 	}
 }
 
 void __fastcall GetItemFrm(int i)
 {
-	item[i]._iAnimData = Item2Frm[ItemCAnimTbl[item[i]._iCurs]];
+	item[i]._iAnimData = itemanims[ItemCAnimTbl[item[i]._iCurs]];
 }
 
 void __fastcall GetItemStr(int i)
@@ -3694,7 +3665,7 @@ void __fastcall PrintItemPower(char plidx, ItemStruct *x)
 	}
 }
 
-void __cdecl DrawUBack()
+void __cdecl DrawUTextBack()
 {
 	CelDecodeOnly(88, 487, (BYTE *)pSTextBoxCels, 1, 271);
 
@@ -3732,7 +3703,7 @@ void __fastcall PrintUString(int x, int y, int cjustflag, char *str, int col)
 			goto LABEL_16;
 		do {
 			v11 = (unsigned char)str[v9++];
-			v10 += fontkern[fontframe[fontidx[v11]]] + 1;
+			v10 += fontkern[fontframe[gbFontTransTbl[v11]]] + 1;
 		} while (v9 < v15);
 		if (v10 < 257)
 		LABEL_16:
@@ -3743,7 +3714,7 @@ void __fastcall PrintUString(int x, int y, int cjustflag, char *str, int col)
 	a3 = 0;
 	if (v15 > 0) {
 		while (1) {
-			v13 = fontframe[fontidx[(unsigned char)v5[v12]]];
+			v13 = fontframe[gbFontTransTbl[(unsigned char)v5[v12]]];
 			v14 = v13;
 			v8 += fontkern[v13] + 1;
 			if (v13) {
@@ -3761,22 +3732,39 @@ void __fastcall PrintUString(int x, int y, int cjustflag, char *str, int col)
 
 void __fastcall DrawULine(int y)
 {
-	char *v1;      // esi
-	char *v2;      // edi
-	signed int v3; // edx
+	/// ASSERT: assert(gpBuffer);
 
-	v1 = &gpBuffer->row[25].pixels[26];
-	v2 = &gpBuffer->row_unused_1[0].pixels[screen_y_times_768[SStringY[y] + 198] + 26];
-	v3 = 3;
-	do {
-		qmemcpy(v2, v1, 0x10A); /* find real fix */
-		v1 += 264;
-		v2 += 264;
-		*v2 = *v1;
-		v1 += 504;
-		v2 += 504;
-		--v3;
-	} while (v3);
+#if (_MSC_VER >= 800) && (_MSC_VER <= 1200)
+	int yy;
+
+	yy = screen_y_times_768[SStringY[y] + 198] + 26 + 64;
+
+	__asm {
+		mov		esi, gpBuffer
+		mov		edi, esi
+		add		esi, SCREENXY(26, 25)
+		add		edi, yy
+		mov		ebx, 768 - 266
+		mov		edx, 3
+	copyline:
+		mov		ecx, 266 / 4
+		rep movsd
+		movsw
+		add		esi, ebx
+		add		edi, ebx
+		dec		edx
+		jnz		copyline
+	}
+#else
+	int i;
+	BYTE *src, *dst;
+
+	src = &gpBuffer[SCREENXY(26, 25)];
+	dst = &gpBuffer[screen_y_times_768[SStringY[y] + 198] + 26 + 64];
+
+	for (i = 0; i < 3; i++, src += 768, dst += 768)
+		memcpy(dst, src, 266);
+#endif
 }
 
 void __cdecl DrawUniqueInfo()
@@ -3787,7 +3775,7 @@ void __cdecl DrawUniqueInfo()
 
 	if (!chrflag && !questlog) {
 		v0 = curruitem._iUid;
-		DrawUBack();
+		DrawUTextBack();
 		v1 = v0;
 		PrintUString(0, 2, 1, UniqueItemList[v1].UIName, 3);
 		DrawULine(5);
@@ -4127,15 +4115,18 @@ void __fastcall UseItem(int p, int Mid, int spl)
 	}
 }
 
-BOOLEAN __fastcall StoreStatOk(ItemStruct *h)
+BOOL __fastcall StoreStatOk(ItemStruct *h)
 {
-	BOOLEAN sf; // al
+	BOOL sf;
 
-	sf = 1;
-	if (plr[myplr]._pStrength < h->_iMinStr
-	    || plr[myplr]._pMagic < h->_iMinMag
-	    || plr[myplr]._pDexterity < h->_iMinDex)
-		sf = 0;
+	sf = TRUE;
+	if (plr[myplr]._pStrength < h->_iMinStr)
+		sf = FALSE;
+	if (plr[myplr]._pMagic < h->_iMinMag)
+		sf = FALSE;
+	if (plr[myplr]._pDexterity < h->_iMinDex)
+		sf = FALSE;
+
 	return sf;
 }
 
@@ -4788,7 +4779,7 @@ int __cdecl ItemNoFlippy()
 	int r; // ecx
 
 	r = itemactive[numitems - 1];
-	item[r]._iAnimFlag = 0;
+	item[r]._iAnimFlag = FALSE;
 	item[r]._iAnimFrame = item[r]._iAnimLen;
 	item[r]._iSelFlag = 1;
 

@@ -83,6 +83,24 @@
 #define PAL16_RED		224
 #define PAL16_GRAY		240
 
+#define SCREENXY(x, y)	((x) + 64 + (((y) + 160) * 768))
+
+#define MemFreeDbg(p)	\
+{						\
+	void *p__p;			\
+	p__p = p;			\
+	p = NULL;			\
+	mem_free_dbg(p__p);	\
+}
+
+#undef assert
+
+#ifndef _DEBUG
+#define assert(exp) ((void)0)
+#else
+#define assert(exp) (void)( (exp) || (assert_fail(__LINE__, __FILE__, #exp), 0) )
+#endif
+
 #ifndef INVALID_FILE_ATTRIBUTES
 #define INVALID_FILE_ATTRIBUTES ((DWORD)-1)
 #endif
@@ -117,14 +135,10 @@
 #define _LOBYTE(x)  BYTEn(x,LOW_IND(x,BYTE))
 #define _LOWORD(x)  WORDn(x,LOW_IND(x,WORD))
 #define _HIBYTE(x)  BYTEn(x,HIGH_IND(x,BYTE))
-#define _HIWORD(x)  WORDn(x,HIGH_IND(x,WORD))
 #define BYTE1(x)   BYTEn(x,  1)         // byte 1 (counting from 0)
 #define BYTE2(x)   BYTEn(x,  2)
 
-// now signed macros (the same but with sign extension)
-#define SBYTEn(x, n)   (*((char*)&(x)+n))
-
-#define SLOBYTE(x)  SBYTEn(x,LOW_IND(x,char))
+#define SLOBYTE(x)   (*((char*)&(x)+LOW_IND(x,char)))
 
 // Helper functions to represent some assembly instructions.
 
@@ -137,14 +151,6 @@ __inline void *qmemcpy(void *dst, const void *src, size_t cnt)
 		--cnt;
 	}
 	return dst;
-}
-
-// rotate right
-__inline WORD __ROR2__(WORD value, DWORD count)
-{
-	count %= 16;
-
-	return value >> count | value << (16 - count);
 }
 
 #endif /* IDA_GARBAGE */

@@ -15,17 +15,17 @@ extern int lvlbtndown;    // weak
 extern int dropGoldValue; // idb
 extern BOOL drawmanaflag; // idb
 extern BOOL chrbtnactive;
-extern void *pPanelText;
+extern BYTE *pPanelText;
 extern int frame_4B8800; // idb
-extern char *pLifeBuff;
-extern void *pBtmBuff;
+extern BYTE *pLifeBuff;
+extern BYTE *pBtmBuff;
 extern void *pTalkBtns;
 extern int pstrjust[4];
 extern int pnumlines; // idb
 extern BOOL pinfoflag;
 extern int talkbtndown[3];
 extern int pSpell; // weak
-extern char *pManaBuff;
+extern BYTE *pManaBuff;
 extern int infoclr; // weak
 extern void *pGBoxBuff;
 extern void *pSBkBtnCel;
@@ -60,13 +60,13 @@ void __cdecl DrawSpellList();
 void __cdecl SetSpell();
 void __fastcall SetSpeedSpell(int slot);
 void __fastcall ToggleSpell(int slot);
-void __fastcall CPrintString(int No, unsigned int glyph, unsigned char col); /* check arg names */
+void __fastcall CPrintString(int nOffset, int nCel, char col);
 void __fastcall AddPanelString(char *str, BOOL just);
 void __cdecl ClearPanel();
 void __fastcall DrawPanelBox(int x, int y, int w, int h, int sx, int sy);
 void __cdecl InitPanelStr();
-void __fastcall SetFlaskHeight(char *buf, int min, int max, int c, int r);
-void __fastcall DrawFlask(void *a1, int a2, int a3, void *a4, int a5, int a6);
+void __fastcall SetFlaskHeight(BYTE *pCelBuff, int min, int max, int c, int r);
+void __fastcall DrawFlask(BYTE *pCelBuff, int w, int nSrcOff, BYTE *pBuff, int nDstOff, int h);
 void __cdecl DrawLifeFlask();
 void __cdecl UpdateLifeFlask();
 void __cdecl DrawManaFlask();
@@ -123,7 +123,7 @@ void __fastcall control_up_down(char a1);
 extern const unsigned char fontframe[127];
 extern const unsigned char fontkern[68];
 extern const int lineoffset[25];
-extern const unsigned char fontidx[256];
+extern const unsigned char gbFontTransTbl[256];
 
 /* data */
 

@@ -3,7 +3,7 @@
 #include "../types.h"
 
 char L5dungeon[80][80];
-char mydflags[40][40];
+char mydflags[DMAXX][DMAXY];
 int setloadflag; // weak
 int HR1;
 int HR2;
@@ -134,28 +134,32 @@ void __cdecl DRLG_Init_Globals()
 void __fastcall LoadL1Dungeon(char *sFileName, int vx, int vy)
 {
 	int i, j, rw, rh;
-	unsigned char *pLevelMap;
-	unsigned char *lm;
+	BYTE *pLevelMap, *lm;
 
 	dminx = 16;
 	dminy = 16;
 	dmaxx = 96;
 	dmaxy = 96;
+
 	DRLG_InitTrans();
 	pLevelMap = LoadFileInMem(sFileName, 0);
-	for (j = 0; j < 40; j++) {
-		for (i = 0; i < 40; i++) {
+
+	for(j = 0; j < DMAXY; j++) {
+		for(i = 0; i < DMAXX; i++) {
 			dungeon[i][j] = 22;
 			mydflags[i][j] = 0;
 		}
 	}
-	rw = pLevelMap[0];
-	lm = pLevelMap + 2;
-	rh = lm[0];
+
+	lm = pLevelMap;
+	rw = *lm;
 	lm += 2;
-	for (j = 0; j < rh; j++) {
-		for (i = 0; i < rw; i++) {
-			if (*lm) {
+	rh = *lm;
+	lm += 2;
+
+	for(j = 0; j < rh; j++) {
+		for(i = 0; i < rw; i++) {
+			if(*lm != 0) {
 				dungeon[i][j] = *lm;
 				mydflags[i][j] |= 0x80;
 			} else {
@@ -164,6 +168,7 @@ void __fastcall LoadL1Dungeon(char *sFileName, int vx, int vy)
 			lm += 2;
 		}
 	}
+
 	DRLG_L1Floor();
 	ViewX = vx;
 	ViewY = vy;
@@ -200,218 +205,177 @@ void __cdecl DRLG_L1Floor()
 
 void __cdecl DRLG_L1Pass3()
 {
-	int v0;             // eax
-	int *v1;            // edx
-	int *v2;            // eax
-	signed int v3;      // ecx
-	signed int v4;      // ebx
-	int *v5;            // ecx
-	unsigned char *v6;  // edx
-	unsigned short *v7; // esi
-	unsigned short v8;  // ax
-	int v9;             // eax
-	int v10;            // ST24_4
-	int v11;            // ST20_4
-	int v12;            // ST1C_4
-	signed int v13;     // [esp+Ch] [ebp-1Ch]
-	int *v14;           // [esp+10h] [ebp-18h]
-	int v15;            // [esp+14h] [ebp-14h]
-	int v16;            // [esp+18h] [ebp-10h]
-	int v17;            // [esp+1Ch] [ebp-Ch]
-	int v18;            // [esp+20h] [ebp-8h]
+	int i, j, xx, yy;
+	long v1, v2, v3, v4, lv;
 
-	v0 = *((unsigned short *)pMegaTiles + 84) + 1;
-	v18 = *((unsigned short *)pMegaTiles + 84) + 1;
-	_LOWORD(v0) = *((_WORD *)pMegaTiles + 85);
-	v17 = ++v0;
-	_LOWORD(v0) = *((_WORD *)pMegaTiles + 86);
-	v16 = ++v0;
-	_LOWORD(v0) = *((_WORD *)pMegaTiles + 87);
-	v15 = v0 + 1;
-	v1 = dPiece[1];
-	do {
-		v2 = v1;
-		v3 = 56;
-		do {
-			*(v2 - 112) = v18;
-			*v2 = v17;
-			*(v2 - 111) = v16;
-			v2[1] = v15;
-			v2 += 224;
-			--v3;
-		} while (v3);
-		v1 += 2;
-	} while ((signed int)v1 < (signed int)dPiece[2]);
-	v4 = 0;
-	v14 = &dPiece[17][16]; /* check */
-	do {
-		v5 = v14;
-		v6 = (unsigned char *)dungeon + v4;
-		v13 = 40;
-		do {
-			v7 = (unsigned short *)((char *)pMegaTiles + 8 * (*v6 - 1));
-			v8 = *v7;
-			++v7;
-			v9 = v8 + 1;
-			v10 = v9;
-			_LOWORD(v9) = *v7;
-			++v7;
-			v11 = ++v9;
-			_LOWORD(v9) = *v7;
-			v12 = ++v9;
-			_LOWORD(v9) = v7[1];
-			v6 += 40;
-			*(v5 - 112) = v10;
-			*v5 = v11;
-			*(v5 - 111) = v12;
-			v5[1] = v9 + 1;
-			v5 += 224;
-			--v13;
-		} while (v13);
-		v14 += 2;
-		++v4;
-	} while (v4 < 40);
+	lv = 22-1;
+
+#if (_MSC_VER >= 800) && (_MSC_VER <= 1200)
+	__asm {
+		mov		esi, pMegaTiles
+		mov		eax, lv
+		shl		eax, 3
+		add		esi, eax
+		xor		eax, eax
+		lodsw
+		inc		eax
+		mov		v1, eax
+		lodsw
+		inc		eax
+		mov		v2, eax
+		lodsw
+		inc		eax
+		mov		v3, eax
+		lodsw
+		inc		eax
+		mov		v4, eax
+	}
+#else
+	v1 = *((WORD *)&pMegaTiles[lv*8])+1;
+	v2 = *((WORD *)&pMegaTiles[lv*8]+1)+1;
+	v3 = *((WORD *)&pMegaTiles[lv*8]+2)+1;
+	v4 = *((WORD *)&pMegaTiles[lv*8]+3)+1;
+#endif
+
+	for(j = 0; j < MAXDUNY; j += 2) {
+		for(i = 0; i < MAXDUNX; i += 2) {
+			dPiece[i][j] = v1;
+			dPiece[i+1][j] = v2;
+			dPiece[i][j+1] = v3;
+			dPiece[i+1][j+1] = v4;
+		}
+	}
+
+	yy = 16;
+	for(j = 0; j < DMAXY; j++) {
+		xx = 16;
+		for(i = 0; i < DMAXX; i++) {
+			lv = (unsigned char)dungeon[i][j]-1;
+			/// ASSERT: assert(lv >= 0);
+#if (_MSC_VER >= 800) && (_MSC_VER <= 1200)
+			__asm {
+				mov		esi, pMegaTiles
+				mov		eax, lv
+				shl		eax, 3
+				add		esi, eax
+				xor		eax, eax
+				lodsw
+				inc		eax
+				mov		v1, eax
+				lodsw
+				inc		eax
+				mov		v2, eax
+				lodsw
+				inc		eax
+				mov		v3, eax
+				lodsw
+				inc		eax
+				mov		v4, eax
+			}
+#else
+			v1 = *((WORD *)&pMegaTiles[lv*8])+1;
+			v2 = *((WORD *)&pMegaTiles[lv*8]+1)+1;
+			v3 = *((WORD *)&pMegaTiles[lv*8]+2)+1;
+			v4 = *((WORD *)&pMegaTiles[lv*8]+3)+1;
+#endif
+			dPiece[xx][yy] = v1;
+			dPiece[xx+1][yy] = v2;
+			dPiece[xx][yy+1] = v3;
+			dPiece[xx+1][yy+1] = v4;
+			xx += 2;
+		}
+		yy += 2;
+	}
 }
 
 void __cdecl DRLG_InitL1Vals()
 {
-	int v0;        // esi
-	int(*v1)[112]; // edx
-	char *v2;      // ecx
-	int v3;        // eax
-	char v4;       // al
-	char v5;       // [esp-4h] [ebp-18h]
-	signed int v6; // [esp+Ch] [ebp-8h]
-	int(*v7)[112]; // [esp+10h] [ebp-4h]
+	int i, j, pc;
 
-	v0 = 0;
-	v7 = dPiece;
-	do {
-		v1 = v7;
-		v2 = (char *)dArch + v0;
-		v6 = 112;
-		do {
-			v3 = (*v1)[0];
-			if ((*v1)[0] != 12) {
-				if (v3 == 11)
-					goto LABEL_21;
-				if (v3 != 71) {
-					if (v3 == 259) {
-						v5 = 5;
-					LABEL_9:
-						v4 = v5;
-						goto LABEL_22;
-					}
-					if (v3 == 249 || v3 == 325)
-						goto LABEL_21;
-					if (v3 != 321) {
-						if (v3 == 255) {
-							v5 = 4;
-							goto LABEL_9;
-						}
-						if (v3 != 211) {
-							if (v3 == 344)
-								goto LABEL_21;
-							if (v3 != 341) {
-								if (v3 == 331)
-									goto LABEL_21;
-								if (v3 != 418) {
-									if (v3 != 421)
-										goto LABEL_23;
-								LABEL_21:
-									v4 = 2;
-									goto LABEL_22;
-								}
-							}
-						}
-					}
-				}
+	for(j = 0; j < MAXDUNY; j++) {
+		for(i = 0; i < MAXDUNX; i++) {
+			if(dPiece[i][j] == 12) {
+				pc = 1;
+			} else if(dPiece[i][j] == 11) {
+				pc = 2;
+			} else if(dPiece[i][j] == 71) {
+				pc = 1;
+			} else if(dPiece[i][j] == 259) {
+				pc = 5;
+			} else if(dPiece[i][j] == 249) {
+				pc = 2;
+			} else if(dPiece[i][j] == 325) {
+				pc = 2;
+			} else if(dPiece[i][j] == 321) {
+				pc = 1;
+			} else if(dPiece[i][j] == 255) {
+				pc = 4;
+			} else if(dPiece[i][j] == 211) {
+				pc = 1;
+			} else if(dPiece[i][j] == 344) {
+				pc = 2;
+			} else if(dPiece[i][j] == 341) {
+				pc = 1;
+			} else if(dPiece[i][j] == 331) {
+				pc = 2;
+			} else if(dPiece[i][j] == 418) {
+				pc = 1;
+			} else if(dPiece[i][j] == 421) {
+				pc = 2;
+			} else {
+				continue;
 			}
-			v4 = 1;
-		LABEL_22:
-			*v2 = v4;
-		LABEL_23:
-			++v1;
-			v2 += 112;
-			--v6;
-		} while (v6);
-		v7 = (int(*)[112])((char *)v7 + 4);
-		++v0;
-	} while ((signed int)v7 < (signed int)dPiece[1]);
+			dArch[i][j] = pc;
+		}
+	}
 }
 
 void __fastcall LoadPreL1Dungeon(char *sFileName, int vx, int vy)
 {
-	unsigned char *v3; // ebx
-	signed int v4;     // ecx
-	signed int v5;     // eax
-	signed int v6;     // edx
-	int v7;            // esi
-	int v8;            // edi
-	char *v9;          // eax
-	int v10;           // ecx
-	char v11;          // dl
-	signed int v12;    // esi
-	signed int v13;    // eax
-	signed int v14;    // edi
-	int v15;           // [esp+Ch] [ebp-8h]
-	int v16;           // [esp+10h] [ebp-4h]
+	int i, j, rw, rh;
+	BYTE *pLevelMap, *lm;
 
 	dminx = 16;
 	dminy = 16;
 	dmaxx = 96;
 	dmaxy = 96;
-	v3 = LoadFileInMem(sFileName, 0);
-	v4 = 0;
-	do {
-		v5 = v4;
-		v6 = 40;
-		do {
-			mydflags[0][v5] = 0;
-			dungeon[0][v5] = 22;
-			v5 += 40;
-			--v6;
-		} while (v6);
-		++v4;
-	} while (v4 < 40);
-	v16 = 0;
-	v7 = *v3;
-	v8 = v3[2];
-	v9 = (char *)(v3 + 4);
-	if (v8 > 0) {
-		do {
-			if (v7 > 0) {
-				v10 = v16;
-				v15 = v7;
-				do {
-					v11 = *v9;
-					if (*v9) {
-						mydflags[0][v10] |= 0x80u;
-						dungeon[0][v10] = v11;
-					} else {
-						dungeon[0][v10] = 13;
-					}
-					v10 += 40;
-					v9 += 2;
-					--v15;
-				} while (v15);
-			}
-			++v16;
-		} while (v16 < v8);
+
+	pLevelMap = LoadFileInMem(sFileName, 0);
+
+	for(j = 0; j < DMAXY; j++) {
+		for(i = 0; i < DMAXX; i++) {
+			dungeon[i][j] = 22;
+			mydflags[i][j] = 0;
+		}
 	}
+
+	lm = pLevelMap;
+	rw = *lm;
+	lm += 2;
+	rh = *lm;
+	lm += 2;
+
+	for(j = 0; j < rh; j++) {
+		for(i = 0; i < rw; i++) {
+			if(*lm != 0) {
+				dungeon[i][j] = *lm;
+				mydflags[i][j] |= 0x80;
+			} else {
+				dungeon[i][j] = 13;
+			}
+			lm += 2;
+		}
+	}
+
 	DRLG_L1Floor();
-	v12 = 0;
-	do {
-		v13 = v12;
-		v14 = 40;
-		do {
-			pdungeon[0][v13] = dungeon[0][v13];
-			v13 += 40;
-			--v14;
-		} while (v14);
-		++v12;
-	} while (v12 < 40);
-	mem_free_dbg(v3);
+
+	for(j = 0; j < DMAXY; j++) {
+		for(i = 0; i < DMAXX; i++) {
+			pdungeon[i][j] = dungeon[i][j];
+		}
+	}
+
+	mem_free_dbg(pLevelMap);
 }
 // 5CF328: using guessed type int dmaxx;
 // 5CF32C: using guessed type int dmaxy;
@@ -462,11 +426,11 @@ void __cdecl DRLG_LoadL1SP()
 
 void __cdecl DRLG_FreeL1SP()
 {
-	void *v0; // ecx
+	void *ptr;
 
-	v0 = pSetPiece;
-	pSetPiece = 0;
-	mem_free_dbg(v0);
+	ptr = pSetPiece;
+	pSetPiece = NULL;
+	mem_free_dbg(ptr);
 }
 
 void __fastcall DRLG_L5(int entry)
@@ -485,8 +449,6 @@ void __fastcall DRLG_L5(int entry)
 	case 3:
 	case 4:
 		minarea = 761;
-		break;
-	default:
 		break;
 	}
 
@@ -1232,8 +1194,6 @@ void __fastcall L5HorizWall(int i, int j, char p, int dx)
 		if (p == 4)
 			p = 27;
 		break;
-	default:
-		break;
 	}
 
 	if (random(0, 6) == 5)
@@ -1282,8 +1242,6 @@ void __fastcall L5VertWall(int i, int j, char p, int dy)
 			p = 35;
 		if (p == 4)
 			p = 37;
-		break;
-	default:
 		break;
 	}
 
