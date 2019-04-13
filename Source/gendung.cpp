@@ -7,19 +7,19 @@ int themeCount;
 char nTransTable[2049];
 //int dword_52D204;
 int dMonster[MAXDUNX][MAXDUNY];
-char dungeon[40][40];
+unsigned char dungeon[40][40];
 char dObject[MAXDUNX][MAXDUNY];
 BYTE *pSpeedCels;
 int nlevel_frames; // weak
 char pdungeon[40][40];
 char dDead[MAXDUNX][MAXDUNY];
 WORD dpiece_defs_map_1[MAXDUNX * MAXDUNY][16];
-char dTransVal2[MAXDUNX][MAXDUNY];
+char dPreLight[MAXDUNX][MAXDUNY];
 char TransVal; // weak
 int MicroTileLen;
 char dflags[40][40];
 int dPiece[MAXDUNX][MAXDUNY];
-char dTransVal[MAXDUNX][MAXDUNY];
+char dLight[MAXDUNX][MAXDUNY];
 int setloadflag_2; // weak
 int tile_defs[MAXTILES];
 BYTE *pMegaTiles;
@@ -27,7 +27,7 @@ BYTE *pLevelPieces;
 int gnDifficulty; // idb
 char block_lvid[2049];
 //char byte_5B78EB;
-char dung_map[MAXDUNX][MAXDUNY];
+char dTransVal[MAXDUNX][MAXDUNY];
 BOOLEAN nTrapTable[2049];
 BYTE leveltype;
 unsigned char currlevel; // idb
@@ -69,7 +69,7 @@ int dminx; // weak
 int dminy; // weak
 WORD dpiece_defs_map_2[MAXDUNX][MAXDUNY][16];
 
-void __cdecl FillSolidBlockTbls()
+void FillSolidBlockTbls()
 {
 	unsigned char bv;
 	unsigned int dwTiles;
@@ -82,7 +82,7 @@ void __cdecl FillSolidBlockTbls()
 	memset(nMissileTable, 0, sizeof(nMissileTable));
 	memset(nTrapTable, 0, sizeof(nTrapTable));
 
-	switch(leveltype) {
+	switch (leveltype) {
 	case DTYPE_TOWN:
 		pSBFile = LoadFileInMem("Levels\\TownData\\Town.SOL", (int *)&dwTiles);
 		break;
@@ -104,17 +104,17 @@ void __cdecl FillSolidBlockTbls()
 
 	pTmp = pSBFile;
 
-	for(i = 1; i <= dwTiles; i++) {
+	for (i = 1; i <= dwTiles; i++) {
 		bv = *pTmp++;
-		if(bv & 1)
+		if (bv & 1)
 			nSolidTable[i] = 1;
-		if(bv & 2)
+		if (bv & 2)
 			nBlockTable[i] = 1;
-		if(bv & 4)
+		if (bv & 4)
 			nMissileTable[i] = 1;
-		if(bv & 8)
+		if (bv & 8)
 			nTransTable[i] = 1;
-		if(bv & 0x80)
+		if (bv & 0x80)
 			nTrapTable[i] = 1;
 		block_lvid[i] = (bv & 0x70) >> 4; /* beta: (bv >> 4) & 7 */
 	}
@@ -122,7 +122,7 @@ void __cdecl FillSolidBlockTbls()
 	mem_free_dbg(pSBFile);
 }
 
-void __cdecl MakeSpeedCels()
+void MakeSpeedCels()
 {
 	int i, j, x, y;
 	int total_frames, blocks, total_size, frameidx, lfs_adder, blk_cnt, currtile, nDataSize;
@@ -136,22 +136,22 @@ void __cdecl MakeSpeedCels()
 	BYTE *src, *dst, *tbl;
 #endif
 
-	for(i = 0; i < MAXTILES; i++) {
+	for (i = 0; i < MAXTILES; i++) {
 		tile_defs[i] = i;
 		level_frame_count[i] = 0;
 		level_frame_types[i] = 0;
 	}
 
-	if(leveltype != DTYPE_HELL)
+	if (leveltype != DTYPE_HELL)
 		blocks = 10;
 	else
 		blocks = 12;
 
-	for(y = 0; y < MAXDUNY; y++) {
-		for(x = 0; x < MAXDUNX; x++) {
-			for(i = 0; i < blocks; i++) {
+	for (y = 0; y < MAXDUNY; y++) {
+		for (x = 0; x < MAXDUNX; x++) {
+			for (i = 0; i < blocks; i++) {
 				pMap = dpiece_defs_map_2[x][y];
-				if(pMap[i]) {
+				if (pMap[i]) {
 					level_frame_count[pMap[i] & 0xFFF]++;
 					level_frame_types[pMap[i] & 0xFFF] = pMap[i] & 0x7000;
 				}
@@ -162,7 +162,7 @@ void __cdecl MakeSpeedCels()
 	pFrameTable = (DWORD *)pDungeonCels;
 	nlevel_frames = pFrameTable[0] & 0xFFFF;
 
-	for(i = 1; i < nlevel_frames; i++) {
+	for (i = 1; i < nlevel_frames; i++) {
 #if (_MSC_VER >= 800) && (_MSC_VER <= 1200)
 		__asm {
 			mov		ebx, pDungeonCels
@@ -181,13 +181,13 @@ void __cdecl MakeSpeedCels()
 
 	level_frame_sizes[0] = 0;
 
-	if(leveltype == DTYPE_HELL) {
-		for(i = 0; i < nlevel_frames; i++) {
-			if(!i)
+	if (leveltype == DTYPE_HELL) {
+		for (i = 0; i < nlevel_frames; i++) {
+			if (!i)
 				level_frame_count[0] = 0;
 			blood_flag = TRUE;
-			if(level_frame_count[i]) {
-				if(level_frame_types[i] != 0x1000) {
+			if (level_frame_count[i]) {
+				if (level_frame_types[i] != 0x1000) {
 #if (_MSC_VER >= 800) && (_MSC_VER <= 1200)
 					j = level_frame_sizes[i];
 					__asm {
@@ -214,9 +214,9 @@ void __cdecl MakeSpeedCels()
 					}
 #else
 					src = &pDungeonCels[pFrameTable[i]];
-					for(j = level_frame_sizes[i]; j; j--) {
+					for (j = level_frame_sizes[i]; j; j--) {
 						pix = *src++;
-						if(pix && pix < 32)
+						if (pix && pix < 32)
 							blood_flag = FALSE;
 					}
 #endif
@@ -263,14 +263,14 @@ void __cdecl MakeSpeedCels()
 					}
 #else
 					src = &pDungeonCels[pFrameTable[i]];
-					for(k = 32; k; k--) {
-						for(l = 32; l;) {
+					for (k = 32; k; k--) {
+						for (l = 32; l;) {
 							width = *src++;
-							if(!(width & 0x80)) {
+							if (!(width & 0x80)) {
 								l -= width;
-								while(width) {
+								while (width) {
 									pix = *src++;
-									if(pix && pix < 32)
+									if (pix && pix < 32)
 										blood_flag = FALSE;
 									width--;
 								}
@@ -282,7 +282,7 @@ void __cdecl MakeSpeedCels()
 					}
 #endif
 				}
-				if(!blood_flag)
+				if (!blood_flag)
 					level_frame_count[i] = 0;
 			}
 		}
@@ -292,35 +292,35 @@ void __cdecl MakeSpeedCels()
 	total_size = 0;
 	total_frames = 0;
 
-	if(light4flag) {
-		while(total_size < 0x100000) {
+	if (light4flag) {
+		while (total_size < 0x100000) {
 			total_size += level_frame_sizes[total_frames] << 1;
 			total_frames++;
 		}
 	} else {
-		while(total_size < 0x100000) {
+		while (total_size < 0x100000) {
 			total_size += (level_frame_sizes[total_frames] << 4) - (level_frame_sizes[total_frames] << 1);
 			total_frames++;
 		}
 	}
 
 	total_frames--;
-	if(total_frames > 128)
+	if (total_frames > 128)
 		total_frames = 128;
 
 	frameidx = 0; /* move into loop ? */
 
-	if(light4flag)
+	if (light4flag)
 		blk_cnt = 3;
 	else
 		blk_cnt = 15;
 
-	for(i = 0; i < total_frames; i++) {
+	for (i = 0; i < total_frames; i++) {
 		currtile = tile_defs[i];
 		SpeedFrameTbl[i][0] = currtile;
-		if(level_frame_types[i] != 0x1000) {
+		if (level_frame_types[i] != 0x1000) {
 			lfs_adder = level_frame_sizes[i];
-			for(j = 1; j < blk_cnt; j++) {
+			for (j = 1; j < blk_cnt; j++) {
 				SpeedFrameTbl[i][j] = frameidx;
 #if (_MSC_VER >= 800) && (_MSC_VER <= 1200)
 				__asm {
@@ -348,15 +348,15 @@ void __cdecl MakeSpeedCels()
 #else
 				src = &pDungeonCels[pFrameTable[currtile]];
 				dst = &pSpeedCels[frameidx];
-				tbl = (BYTE *)&pLightTbl[256 * j];
-				for(k = lfs_adder; k; k--) {
+				tbl = &pLightTbl[256 * j];
+				for (k = lfs_adder; k; k--) {
 					*dst++ = tbl[*src++];
 				}
 #endif
 				frameidx += lfs_adder;
 			}
 		} else {
-			for(j = 1; j < blk_cnt; j++) {
+			for (j = 1; j < blk_cnt; j++) {
 				SpeedFrameTbl[i][j] = frameidx;
 #if (_MSC_VER >= 800) && (_MSC_VER <= 1200)
 				__asm {
@@ -402,14 +402,14 @@ void __cdecl MakeSpeedCels()
 #else
 				src = &pDungeonCels[pFrameTable[currtile]];
 				dst = &pSpeedCels[frameidx];
-				tbl = (BYTE *)&pLightTbl[256 * j];
-				for(k = 32; k; k--) {
-					for(l = 32; l;) {
+				tbl = &pLightTbl[256 * j];
+				for (k = 32; k; k--) {
+					for (l = 32; l;) {
 						width = *src++;
 						*dst++ = width;
-						if(!(width & 0x80)) {
+						if (!(width & 0x80)) {
 							l -= width;
-							while(width) {
+							while (width) {
 								*dst++ = tbl[*src++];
 								width--;
 							}
@@ -425,14 +425,14 @@ void __cdecl MakeSpeedCels()
 		}
 	}
 
-	for(y = 0; y < MAXDUNY; y++) {
-		for(x = 0; x < MAXDUNX; x++) {
-			if(dPiece[x][y]) {
+	for (y = 0; y < MAXDUNY; y++) {
+		for (x = 0; x < MAXDUNX; x++) {
+			if (dPiece[x][y]) {
 				pMap = dpiece_defs_map_2[x][y];
-				for(i = 0; i < blocks; i++) {
-					if(pMap[i]) {
-						for(m = 0; m < total_frames; m++) {
-							if((pMap[i] & 0xFFF) == tile_defs[m]) {
+				for (i = 0; i < blocks; i++) {
+					if (pMap[i]) {
+						for (m = 0; m < total_frames; m++) {
+							if ((pMap[i] & 0xFFF) == tile_defs[m]) {
 								pMap[i] = m + level_frame_types[m] + 0x8000;
 								m = total_frames;
 							}
@@ -446,16 +446,16 @@ void __cdecl MakeSpeedCels()
 // 525728: using guessed type int light4flag;
 // 53CD4C: using guessed type int nlevel_frames;
 
-void __fastcall SortTiles(int frames)
+void SortTiles(int frames)
 {
 	int i;
 	BOOL doneflag;
 
 	doneflag = FALSE;
-	while(frames > 0 && !doneflag) {
+	while (frames > 0 && !doneflag) {
 		doneflag = TRUE;
-		for(i = 0; i < frames; i++) {
-			if(level_frame_count[i] < level_frame_count[i + 1]) {
+		for (i = 0; i < frames; i++) {
+			if (level_frame_count[i] < level_frame_count[i + 1]) {
 				SwapTile(i, i + 1);
 				doneflag = FALSE;
 			}
@@ -464,7 +464,7 @@ void __fastcall SortTiles(int frames)
 	}
 }
 
-void __fastcall SwapTile(int f1, int f2)
+void SwapTile(int f1, int f2)
 {
 	int swap;
 
@@ -482,7 +482,7 @@ void __fastcall SwapTile(int f1, int f2)
 	level_frame_sizes[f2] = swap;
 }
 
-int __fastcall IsometricCoord(int x, int y)
+int IsometricCoord(int x, int y)
 {
 	if (x < MAXDUNY - y)
 		return (y + y * y + x * (x + 2 * y + 3)) / 2;
@@ -492,25 +492,25 @@ int __fastcall IsometricCoord(int x, int y)
 	return MAXDUNX * MAXDUNY - ((y + y * y + x * (x + 2 * y + 3)) / 2) - 1;
 }
 
-void __cdecl SetSpeedCels()
+void SetSpeedCels()
 {
 	int i, x, y;
 
-	for(x = 0; x < MAXDUNX; x++) {
-		for(y = 0; y < MAXDUNY; y++) {
-			for(i = 0; i < 16; i++) {
+	for (x = 0; x < MAXDUNX; x++) {
+		for (y = 0; y < MAXDUNY; y++) {
+			for (i = 0; i < 16; i++) {
 				dpiece_defs_map_1[IsometricCoord(x, y)][i] = dpiece_defs_map_2[x][y][i];
 			}
 		}
 	}
 }
 
-void __cdecl SetDungeonMicros()
+void SetDungeonMicros()
 {
 	int i, x, y, lv, blocks;
 	WORD *pMap, *pPiece;
 
-	if(leveltype != DTYPE_HELL) {
+	if (leveltype != DTYPE_HELL) {
 		MicroTileLen = 10;
 		blocks = 10;
 	} else {
@@ -518,20 +518,20 @@ void __cdecl SetDungeonMicros()
 		blocks = 16;
 	}
 
-	for(y = 0; y < MAXDUNY; y++) {
-		for(x = 0; x < MAXDUNX; x++) {
+	for (y = 0; y < MAXDUNY; y++) {
+		for (x = 0; x < MAXDUNX; x++) {
 			lv = dPiece[x][y];
 			pMap = dpiece_defs_map_2[x][y];
-			if(lv) {
+			if (lv) {
 				lv--;
-				if(leveltype != DTYPE_HELL)
+				if (leveltype != DTYPE_HELL)
 					pPiece = (WORD *)&pLevelPieces[20 * lv];
 				else
 					pPiece = (WORD *)&pLevelPieces[32 * lv];
-				for(i = 0; i < blocks; i++)
+				for (i = 0; i < blocks; i++)
 					pMap[i] = pPiece[(i & 1) + blocks - 2 - (i & 0xE)];
 			} else {
-				for(i = 0; i < blocks; i++)
+				for (i = 0; i < blocks; i++)
 					pMap[i] = 0;
 			}
 		}
@@ -540,7 +540,7 @@ void __cdecl SetDungeonMicros()
 	MakeSpeedCels();
 	SetSpeedCels();
 
-	if(zoomflag) {
+	if (zoomflag) {
 		scr_pix_width = 640;
 		scr_pix_height = 352;
 		dword_5C2FF8 = 10;
@@ -558,15 +558,15 @@ void __cdecl SetDungeonMicros()
 // 5C3000: using guessed type int scr_pix_width;
 // 5C3004: using guessed type int scr_pix_height;
 
-void __cdecl DRLG_InitTrans()
+void DRLG_InitTrans()
 {
-	memset(dung_map, 0, sizeof(dung_map));
+	memset(dTransVal, 0, sizeof(dTransVal));
 	memset(TransList, 0, sizeof(TransList));
 	TransVal = 1;
 }
 // 5A5590: using guessed type char TransVal;
 
-void __fastcall DRLG_MRectTrans(int x1, int y1, int x2, int y2)
+void DRLG_MRectTrans(int x1, int y1, int x2, int y2)
 {
 	int v4;      // esi
 	int v5;      // edi
@@ -580,7 +580,7 @@ void __fastcall DRLG_MRectTrans(int x1, int y1, int x2, int y2)
 	i = 2 * y1 + 17;
 	for (ty_enda = 2 * y2 + 16; i <= ty_enda; ++i) {
 		if (v4 <= v5) {
-			v7 = &dung_map[v4][i];
+			v7 = &dTransVal[v4][i];
 			j = v5 - v4 + 1;
 			do {
 				*v7 = TransVal;
@@ -593,88 +593,56 @@ void __fastcall DRLG_MRectTrans(int x1, int y1, int x2, int y2)
 }
 // 5A5590: using guessed type char TransVal;
 
-void __fastcall DRLG_RectTrans(int x1, int y1, int x2, int y2)
+void DRLG_RectTrans(int x1, int y1, int x2, int y2)
 {
-	int i;    // esi
-	char *v5; // edx
-	int j;    // eax
+	int i, j;
 
-	for (i = y1; i <= y2; ++i) {
-		if (x1 <= x2) {
-			v5 = &dung_map[x1][i];
-			j = x2 - x1 + 1;
-			do {
-				*v5 = TransVal;
-				v5 += 112;
-				--j;
-			} while (j);
+	for (j = y1; j <= y2; j++) {
+		for (i = x1; i <= x2; i++) {
+			dTransVal[i][j] = TransVal;
 		}
 	}
-	++TransVal;
+	TransVal++;
 }
 // 5A5590: using guessed type char TransVal;
 
-void __fastcall DRLG_CopyTrans(int sx, int sy, int dx, int dy)
+void DRLG_CopyTrans(int sx, int sy, int dx, int dy)
 {
-	dung_map[dx][dy] = dung_map[sx][sy];
+	dTransVal[dx][dy] = dTransVal[sx][sy];
 }
 
-void __fastcall DRLG_ListTrans(int num, unsigned char *List)
+void DRLG_ListTrans(int num, unsigned char *List)
 {
-	unsigned char *v2; // esi
-	int v3;            // edi
-	unsigned char v4;  // al
-	unsigned char *v5; // esi
-	unsigned char v6;  // cl
-	unsigned char v7;  // dl
-	unsigned char v8;  // bl
+	int i;
+	unsigned char x1, x2, y1, y2;
 
-	v2 = List;
-	if (num > 0) {
-		v3 = num;
-		do {
-			v4 = *v2;
-			v5 = v2 + 1;
-			v6 = *v5++;
-			v7 = *v5++;
-			v8 = *v5;
-			v2 = v5 + 1;
-			DRLG_RectTrans(v4, v6, v7, v8);
-			--v3;
-		} while (v3);
+	for (i = 0; i < num; i++) {
+		x1 = *List++;
+		y1 = *List++;
+		x2 = *List++;
+		y2 = *List++;
+		DRLG_RectTrans(x1, y1, x2, y2);
 	}
 }
 
-void __fastcall DRLG_AreaTrans(int num, unsigned char *List)
+void DRLG_AreaTrans(int num, unsigned char *List)
 {
-	unsigned char *v2; // esi
-	int v3;            // edi
-	unsigned char v4;  // al
-	unsigned char *v5; // esi
-	unsigned char v6;  // cl
-	unsigned char v7;  // dl
-	unsigned char v8;  // bl
+	int i;
+	unsigned char x1, x2, y1, y2;
 
-	v2 = List;
-	if (num > 0) {
-		v3 = num;
-		do {
-			v4 = *v2;
-			v5 = v2 + 1;
-			v6 = *v5++;
-			v7 = *v5++;
-			v8 = *v5;
-			v2 = v5 + 1;
-			DRLG_RectTrans(v4, v6, v7, v8);
-			--TransVal;
-			--v3;
-		} while (v3);
+	for (i = 0; i < num; i++) {
+		x1 = *List++;
+		y1 = *List++;
+		x2 = *List++;
+		y2 = *List++;
+		DRLG_RectTrans(x1, y1, x2, y2);
+		--TransVal;
 	}
 	++TransVal;
 }
 // 5A5590: using guessed type char TransVal;
 
-void __cdecl DRLG_InitSetPC()
+void DRLG_InitSetPC()
 {
 	setpc_x = 0;
 	setpc_y = 0;
@@ -684,7 +652,7 @@ void __cdecl DRLG_InitSetPC()
 // 5CF330: using guessed type int setpc_h;
 // 5CF334: using guessed type int setpc_w;
 
-void __cdecl DRLG_SetPC()
+void DRLG_SetPC()
 {
 	int i, j, x, y, w, h;
 
@@ -693,8 +661,8 @@ void __cdecl DRLG_SetPC()
 	x = 2 * setpc_x + 16;
 	y = 2 * setpc_y + 16;
 
-	for(j = 0; j < h; j++) {
-		for(i = 0; i < w; i++) {
+	for (j = 0; j < h; j++) {
+		for (i = 0; i < w; i++) {
 			dFlags[i + x][j + y] |= 8;
 		}
 	}
@@ -702,7 +670,7 @@ void __cdecl DRLG_SetPC()
 // 5CF330: using guessed type int setpc_h;
 // 5CF334: using guessed type int setpc_w;
 
-void __fastcall Make_SetPC(int x, int y, int w, int h)
+void Make_SetPC(int x, int y, int w, int h)
 {
 	int i, j, dx, dy, dh, dw;
 
@@ -711,14 +679,14 @@ void __fastcall Make_SetPC(int x, int y, int w, int h)
 	dx = 2 * x + 16;
 	dy = 2 * y + 16;
 
-	for(j = 0; j < dh; j++) {
-		for(i = 0; i < dw; i++) {
+	for (j = 0; j < dh; j++) {
+		for (i = 0; i < dw; i++) {
 			dFlags[i + dx][j + dy] |= 8;
 		}
 	}
 }
 
-BOOL __fastcall DRLG_WillThemeRoomFit(int floor, int x, int y, int minSize, int maxSize, int *width, int *height)
+BOOL DRLG_WillThemeRoomFit(int floor, int x, int y, int minSize, int maxSize, int *width, int *height)
 {
 	int ii, xx, yy;
 	int xSmallest, ySmallest;
@@ -731,21 +699,21 @@ BOOL __fastcall DRLG_WillThemeRoomFit(int floor, int x, int y, int minSize, int 
 	xCount = 0;
 	yCount = 0;
 
-	if(x > DMAXX - maxSize && y > DMAXY - maxSize) {
+	if (x > DMAXX - maxSize && y > DMAXY - maxSize) {
 		return FALSE;
 	}
-	if(!SkipThemeRoom(x, y)) {
+	if (!SkipThemeRoom(x, y)) {
 		return FALSE;
 	}
 
 	memset(xArray, 0, sizeof(xArray));
 	memset(yArray, 0, sizeof(yArray));
 
-	for(ii = 0; ii < maxSize; ii++) {
-		if(xFlag) {
-			for(xx = x; xx < x + maxSize; xx++) {
-				if((unsigned char)dungeon[xx][y + ii] != floor) {
-					if(xx >= minSize) {
+	for (ii = 0; ii < maxSize; ii++) {
+		if (xFlag) {
+			for (xx = x; xx < x + maxSize; xx++) {
+				if ((unsigned char)dungeon[xx][y + ii] != floor) {
+					if (xx >= minSize) {
 						break;
 					}
 					xFlag = FALSE;
@@ -753,15 +721,15 @@ BOOL __fastcall DRLG_WillThemeRoomFit(int floor, int x, int y, int minSize, int 
 					xCount++;
 				}
 			}
-			if(xFlag) {
+			if (xFlag) {
 				xArray[ii] = xCount;
 				xCount = 0;
 			}
 		}
-		if(yFlag) {
-			for(yy = y; yy < y + maxSize; yy++) {
-				if((unsigned char)dungeon[x + ii][yy] != floor) {
-					if(yy >= minSize) {
+		if (yFlag) {
+			for (yy = y; yy < y + maxSize; yy++) {
+				if ((unsigned char)dungeon[x + ii][yy] != floor) {
+					if (yy >= minSize) {
 						break;
 					}
 					yFlag = FALSE;
@@ -769,15 +737,15 @@ BOOL __fastcall DRLG_WillThemeRoomFit(int floor, int x, int y, int minSize, int 
 					yCount++;
 				}
 			}
-			if(yFlag) {
+			if (yFlag) {
 				yArray[ii] = yCount;
 				yCount = 0;
 			}
 		}
 	}
 
-	for(ii = 0; ii < minSize; ii++) {
-		if(xArray[ii] < minSize || yArray[ii] < minSize) {
+	for (ii = 0; ii < minSize; ii++) {
+		if (xArray[ii] < minSize || yArray[ii] < minSize) {
 			return FALSE;
 		}
 	}
@@ -785,14 +753,14 @@ BOOL __fastcall DRLG_WillThemeRoomFit(int floor, int x, int y, int minSize, int 
 	xSmallest = xArray[0];
 	ySmallest = yArray[0];
 
-	for(ii = 0; ii < maxSize; ii++) {
-		if(xArray[ii] < minSize || yArray[ii] < minSize) {
+	for (ii = 0; ii < maxSize; ii++) {
+		if (xArray[ii] < minSize || yArray[ii] < minSize) {
 			break;
 		}
-		if(xArray[ii] < xSmallest) {
+		if (xArray[ii] < xSmallest) {
 			xSmallest = xArray[ii];
 		}
-		if(yArray[ii] < ySmallest) {
+		if (yArray[ii] < ySmallest) {
 			ySmallest = yArray[ii];
 		}
 	}
@@ -804,7 +772,7 @@ BOOL __fastcall DRLG_WillThemeRoomFit(int floor, int x, int y, int minSize, int 
 // 41965B: using guessed type int var_6C[20];
 // 41965B: using guessed type int var_BC[20];
 
-void __fastcall DRLG_CreateThemeRoom(int themeIndex)
+void DRLG_CreateThemeRoom(int themeIndex)
 {
 	int v1;    // esi
 	int v2;    // eax
@@ -845,7 +813,7 @@ void __fastcall DRLG_CreateThemeRoom(int themeIndex)
 			if (v4 >= v3 + v2)
 				goto LABEL_53;
 		}
-		v21 = &dungeon[v6][v4];
+		v21 = (char *)&dungeon[v6][v4];
 		while (1) {
 			if (leveltype != DTYPE_CATACOMBS)
 				goto LABEL_21;
@@ -1002,7 +970,7 @@ LABEL_53:
 	}
 }
 
-void __fastcall DRLG_PlaceThemeRooms(int minSize, int maxSize, int floor, int freq, int rndSize)
+void DRLG_PlaceThemeRooms(int minSize, int maxSize, int floor, int freq, int rndSize)
 {
 	int v5; // ebx
 	//int v7; // eax
@@ -1082,7 +1050,7 @@ void __fastcall DRLG_PlaceThemeRooms(int minSize, int maxSize, int floor, int fr
 }
 // 5A5590: using guessed type char TransVal;
 
-void __cdecl DRLG_HoldThemeRooms()
+void DRLG_HoldThemeRooms()
 {
 	int *v0; // esi
 	int v1;  // edi
@@ -1129,31 +1097,20 @@ void __cdecl DRLG_HoldThemeRooms()
 	}
 }
 
-BOOL __fastcall SkipThemeRoom(int x, int y)
+BOOL SkipThemeRoom(int x, int y)
 {
-	int i;         // ebx
-	THEME_LOC *v3; // eax
-	int v4;        // esi
+	int i;
 
-	i = 0;
-	if (themeCount <= 0)
-		return 1;
-	v3 = themeLoc;
-	while (1) {
-		if (x >= v3->x - 2 && x <= v3->x + v3->width + 2) {
-			v4 = v3->y;
-			if (y >= v4 - 2 && y <= v4 + v3->height + 2)
-				break;
-		}
-		++i;
-		++v3;
-		if (i >= themeCount)
-			return 1;
+	for (i = 0; i < themeCount; i++) {
+		if (x >= themeLoc[i].x - 2 && x <= themeLoc[i].x + themeLoc[i].width + 2
+		    && y >= themeLoc[i].y - 2 && y <= themeLoc[i].y + themeLoc[i].height + 2)
+			return 0;
 	}
-	return 0;
+
+	return 1;
 }
 
-void __cdecl InitLevels()
+void InitLevels()
 {
 	if (!leveldebug) {
 		currlevel = 0;

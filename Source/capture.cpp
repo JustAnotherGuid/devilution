@@ -2,7 +2,7 @@
 
 #include "../types.h"
 
-void __cdecl CaptureScreen()
+void CaptureScreen()
 {
 	HANDLE hObject;
 	PALETTEENTRY palette[256];
@@ -42,7 +42,7 @@ void __cdecl CaptureScreen()
 	}
 }
 
-BOOL __fastcall CaptureHdr(HANDLE hFile, short width, short height)
+BOOL CaptureHdr(HANDLE hFile, short width, short height)
 {
 	DWORD lpNumBytes;
 	PCXHeader Buffer;
@@ -62,49 +62,43 @@ BOOL __fastcall CaptureHdr(HANDLE hFile, short width, short height)
 	return WriteFile(hFile, &Buffer, sizeof(Buffer), &lpNumBytes, NULL) && lpNumBytes == sizeof(Buffer);
 }
 
-BOOL __fastcall CapturePal(HANDLE hFile, PALETTEENTRY *palette)
+BOOL CapturePal(HANDLE hFile, PALETTEENTRY *palette)
 {
-	char *v3;
-	char Buffer[769];
+	DWORD NumberOfBytesWritten;
+	BYTE pcx_palette[769];
 	int i;
-	DWORD lpNumBytes;
 
-	Buffer[0] = 12;
-	v3 = &Buffer[1];
-	for (i = 256; i != 0; --i) {
-		v3[0] = palette->peRed;
-		v3[1] = palette->peGreen;
-		v3[2] = palette->peBlue;
-
-		palette++;
-		v3 += 3;
+	pcx_palette[0] = 12;
+	for (i = 0; i < 256; i++) {
+		pcx_palette[1 + 3*i + 0] = palette[i].peRed;
+		pcx_palette[1 + 3*i + 1] = palette[i].peGreen;
+		pcx_palette[1 + 3*i + 2] = palette[i].peBlue;
 	}
 
-	return WriteFile(hFile, Buffer, sizeof(Buffer), &lpNumBytes, NULL) && lpNumBytes == sizeof(Buffer);
+	return WriteFile(hFile, pcx_palette, 769, &NumberOfBytesWritten, 0) && NumberOfBytesWritten == 769;
 }
 
-BOOL __fastcall CapturePix(HANDLE hFile, WORD width, WORD height, WORD stride, BYTE *pixels)
+BOOL CapturePix(HANDLE hFile, WORD width, WORD height, WORD stride, BYTE *pixels)
 {
 	int writeSize;
 	DWORD lpNumBytes;
 	BYTE *pBuffer, *pBufferEnd;
 
 	pBuffer = (BYTE *)DiabloAllocPtr(2 * width);
-	do {
-		if (!height) {
-			mem_free_dbg(pBuffer);
-			return TRUE;
-		}
+	while (height != 0) {
 		height--;
 		pBufferEnd = CaptureEnc(pixels, pBuffer, width);
 		pixels += stride;
 		writeSize = pBufferEnd - pBuffer;
-	} while (WriteFile(hFile, pBuffer, writeSize, &lpNumBytes, 0) && lpNumBytes == writeSize);
-
-	return FALSE;
+		if (!(WriteFile(hFile, pBuffer, writeSize, &lpNumBytes, 0) && lpNumBytes == writeSize)) {
+			return FALSE;
+		}
+	}
+	mem_free_dbg(pBuffer);
+	return TRUE;
 }
 
-BYTE *__fastcall CaptureEnc(BYTE *src, BYTE *dst, int width)
+BYTE *CaptureEnc(BYTE *src, BYTE *dst, int width)
 {
 	int rleLength;
 
@@ -138,7 +132,7 @@ BYTE *__fastcall CaptureEnc(BYTE *src, BYTE *dst, int width)
 	return dst;
 }
 
-HANDLE __fastcall CaptureFile(char *dst_path)
+HANDLE CaptureFile(char *dst_path)
 {
 	BOOLEAN num_used[100];
 	int free_num, hFind;
@@ -166,7 +160,7 @@ HANDLE __fastcall CaptureFile(char *dst_path)
 	return INVALID_HANDLE_VALUE;
 }
 
-void __fastcall RedPalette(PALETTEENTRY *pal)
+void RedPalette(PALETTEENTRY *pal)
 {
 	PALETTEENTRY red[256];
 	int i;

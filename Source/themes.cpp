@@ -49,7 +49,7 @@ int trm3y[9] = {
 	1, 1, 1
 };
 
-BOOLEAN __fastcall TFit_Shrine(int i)
+BOOLEAN TFit_Shrine(int i)
 {
 	int v1;        // ecx
 	int v2;        // esi
@@ -64,15 +64,15 @@ BOOLEAN __fastcall TFit_Shrine(int i)
 	v6 = 0;
 	while (1) {
 		v3 = v2 + 112 * v7;
-		if (dung_map[0][v3] != v1) { /* check */
+		if (dTransVal[0][v3] != v1) { /* check */
 			goto LABEL_20;
 		}
 		v4 = dPiece[0][v3 - 1]; // *(_DWORD *)&dflags[39][4 * v3 + 36];
 		if (nTrapTable[v4]
 		    && !nSolidTable[dPiece[-1][v3]] // !nSolidTable[*(_DWORD *)&dflags[28][4 * v3 + 32]]
 		    && !nSolidTable[dPiece[1][v3]]
-		    && dung_map[-1][v3] == v1 // block_lvid[v3 + 1940] == v1
-		    && dung_map[1][v3] == v1
+		    && dTransVal[-1][v3] == v1 // block_lvid[v3 + 1940] == v1
+		    && dTransVal[1][v3] == v1
 		    && !dObject[-1][v3 - 1]
 		    && !dObject[0][v3 + 111]) {
 			v6 = 1;
@@ -83,8 +83,8 @@ BOOLEAN __fastcall TFit_Shrine(int i)
 		if (!nTrapTable[dPiece[-1][v3]] // !nTrapTable[*(_DWORD *)&dflags[28][4 * v3 + 32]]
 		    || nSolidTable[v4]
 		    || nSolidTable[dPiece[0][v3 + 1]]
-		    || dung_map[0][v3 - 1] != v1 // *(&byte_5B78EB + v3) != v1
-		    || dung_map[0][v3 + 1] != v1
+		    || dTransVal[0][v3 - 1] != v1 // *(&byte_5B78EB + v3) != v1
+		    || dTransVal[0][v3 + 1] != v1
 		    || dObject[-1][v3 - 1]
 		    || dObject[-1][v3 + 1]) /* check */
 		{
@@ -110,7 +110,7 @@ BOOLEAN __fastcall TFit_Shrine(int i)
 	return 1;
 }
 
-BOOLEAN __fastcall TFit_Obj5(int t)
+BOOL TFit_Obj5(int t)
 {
 	int v2;         // ebx
 	int v3;         // esi
@@ -137,7 +137,7 @@ BOOLEAN __fastcall TFit_Obj5(int t)
 	v11 = v5;
 	while (1) {
 		v6 = v3 + 112 * v2;
-		if (dung_map[0][v6] == v5 && !nSolidTable[dPiece[0][v6]]) {
+		if (dTransVal[0][v6] == v5 && !nSolidTable[dPiece[0][v6]]) {
 			v12 = 1;
 			v7 = 0;
 			do {
@@ -149,7 +149,7 @@ BOOLEAN __fastcall TFit_Obj5(int t)
 					v12 = 0;
 				}
 				v5 = v11;
-				if (dung_map[0][v8] != v11) {
+				if (dTransVal[0][v8] != v11) {
 					v12 = 0;
 				}
 				++v7;
@@ -177,48 +177,39 @@ BOOLEAN __fastcall TFit_Obj5(int t)
 	}
 }
 
-BOOLEAN __fastcall TFit_SkelRoom(int t)
+BOOL TFit_SkelRoom(int t)
 {
-	int i; // esi
+	int i;
 
 	if (leveltype != 1 && leveltype != 2) {
-		return 0;
-	}
-	i = 0;
-	if (nummtypes <= 0) {
-		return 0;
+		return FALSE;
 	}
 
-	while (!IsSkel(Monsters[i].mtype)) {
-		++i;
-		if (i >= nummtypes) {
-			return 0;
+	for (i = 0; i < nummtypes; i++) {
+		if (IsSkel(Monsters[i].mtype)) {
+			themeVar1 = i;
+			return TFit_Obj5(t);
 		}
 	}
-	themeVar1 = i;
-	return TFit_Obj5(t);
+
+	return FALSE;
 }
 
-BOOLEAN __fastcall TFit_GoatShrine(int t)
+BOOL TFit_GoatShrine(int t)
 {
-	int i; // esi
+	int i;
 
-	i = 0;
-	if (nummtypes <= 0) {
-		return 0;
-	}
-
-	while (!IsGoat(Monsters[i].mtype)) {
-		++i;
-		if (i >= nummtypes) {
-			return 0;
+	for (i = 0; i < nummtypes; i++) {
+		if (IsGoat(Monsters[i].mtype)) {
+			themeVar1 = i;
+			return TFit_Obj5(t);
 		}
 	}
-	themeVar1 = i;
-	return TFit_Obj5(t);
+
+	return FALSE;
 }
 
-BOOL __fastcall CheckThemeObj3(int xp, int yp, int t, int f)
+BOOL CheckThemeObj3(int xp, int yp, int t, int f)
 {
 	int i;
 
@@ -227,7 +218,7 @@ BOOL __fastcall CheckThemeObj3(int xp, int yp, int t, int f)
 			return FALSE;
 		if (nSolidTable[dPiece[xp + trm3x[i]][yp + trm3y[i]]])
 			return FALSE;
-		if (dung_map[xp + trm3x[i]][yp + trm3y[i]] != themes[t].ttval)
+		if (dTransVal[xp + trm3x[i]][yp + trm3y[i]] != themes[t].ttval)
 			return FALSE;
 		if (dObject[xp + trm3x[i]][yp + trm3y[i]])
 			return FALSE;
@@ -238,36 +229,25 @@ BOOL __fastcall CheckThemeObj3(int xp, int yp, int t, int f)
 	return TRUE;
 }
 
-BOOLEAN __fastcall TFit_Obj3(int t)
+BOOL TFit_Obj3(int t)
 {
-	int yp;         // edi
-	int xp;         // esi
-	char objrnd[4]; // [esp+Bh] [ebp-5h]
+	int xp, yp;
+	char objrnd[4] = { 4, 4, 3, 5 };
 
-	objrnd[0] = 4;
-	objrnd[1] = 4;
-	objrnd[2] = 3;
-	objrnd[3] = 5;
-	yp = 1;
-	while (2) {
-		xp = 1;
-		do {
+	for (yp = 1; yp < MAXDUNY - 1; yp++) {
+		for (xp = 1; xp < MAXDUNX - 1; xp++) {
 			if (CheckThemeObj3(xp, yp, t, objrnd[leveltype - 1])) {
 				themex = xp;
 				themey = yp;
-				return 1;
+				return TRUE;
 			}
-			++xp;
-		} while (xp < 111);
-		if (++yp < 111) {
-			continue;
 		}
-		break;
 	}
-	return 0;
+
+	return FALSE;
 }
 
-BOOLEAN __fastcall CheckThemeReqs(int t)
+BOOLEAN CheckThemeReqs(int t)
 {
 	BOOLEAN rv; // al
 	int v2;     // ecx
@@ -344,7 +324,7 @@ BOOLEAN __fastcall CheckThemeReqs(int t)
 // 6AAC08: using guessed type int pFountainFlag;
 // 6AAC0C: using guessed type int bFountainFlag;
 
-BOOLEAN __fastcall SpecialThemeFit(int i, int t)
+BOOLEAN SpecialThemeFit(int i, int t)
 {
 	BOOLEAN rv; // eax
 
@@ -431,7 +411,7 @@ BOOLEAN __fastcall SpecialThemeFit(int i, int t)
 // 6AAC08: using guessed type int pFountainFlag;
 // 6AAC0C: using guessed type int bFountainFlag;
 
-BOOLEAN __fastcall CheckThemeRoom(int tv)
+BOOLEAN CheckThemeRoom(int tv)
 {
 	int v1;         // esi
 	int *v2;        // edx
@@ -446,7 +426,7 @@ BOOLEAN __fastcall CheckThemeRoom(int tv)
 	signed int v12; // [esp+Ch] [ebp-8h]
 
 	v1 = 0;
-	if (trigflag[4] <= 0) {
+	if (trigflag_4 <= 0) {
 	LABEL_5:
 		v3 = 0;
 		v4 = 0;
@@ -454,7 +434,7 @@ BOOLEAN __fastcall CheckThemeRoom(int tv)
 			v5 = 0;
 			v6 = v4;
 			do {
-				if (dung_map[0][v6] == tv) {
+				if (dTransVal[0][v6] == tv) {
 					if (dFlags[0][v6] & DFLAG_POPULATED) {
 						return 0;
 					}
@@ -470,7 +450,7 @@ BOOLEAN __fastcall CheckThemeRoom(int tv)
 			v8 = &dPiece[-1][111];
 		LABEL_16:
 			v12 = 0;
-			v9 = &dung_map[-1][v7 + 111];
+			v9 = &dTransVal[-1][v7 + 111];
 			v10 = v8;
 			while (v9[1] != tv
 			    || nSolidTable[v10[1]]
@@ -493,10 +473,10 @@ BOOLEAN __fastcall CheckThemeRoom(int tv)
 		}
 	} else {
 		v2 = &trigs[0]._ty;
-		while (dung_map[*(v2 - 1)][*v2] != tv) {
+		while (dTransVal[*(v2 - 1)][*v2] != tv) {
 			++v1;
 			v2 += 4;
-			if (v1 >= trigflag[4]) {
+			if (v1 >= trigflag_4) {
 				goto LABEL_5;
 			}
 		}
@@ -504,7 +484,7 @@ BOOLEAN __fastcall CheckThemeRoom(int tv)
 	return 0;
 }
 
-void __cdecl InitThemes()
+void InitThemes()
 {
 	int v0;  // esi
 	char v1; // bl
@@ -621,7 +601,7 @@ void __cdecl InitThemes()
 // 6AAC0C: using guessed type int bFountainFlag;
 
 // HoldThemeRooms marks theme rooms as populated.
-void __cdecl HoldThemeRooms()
+void HoldThemeRooms()
 {
 	int i, x, y;
 
@@ -630,7 +610,7 @@ void __cdecl HoldThemeRooms()
 			for (i = 0; i < numthemes; i++) {
 				for (y = 0; y < MAXDUNY; y++) {
 					for (x = 0; x < MAXDUNX; x++) {
-						if (dung_map[x][y] == (char)themes[i].ttval) {
+						if (dTransVal[x][y] == (char)themes[i].ttval) {
 							dFlags[x][y] |= DFLAG_POPULATED;
 						}
 					}
@@ -647,7 +627,7 @@ void __cdecl HoldThemeRooms()
 // Parameters:
 //    - t: theme number (index into themes array).
 //    - f: frequency (1/f likelihood of adding monster).
-void __fastcall PlaceThemeMonsts(int t, int f)
+void PlaceThemeMonsts(int t, int f)
 {
 	int xp, yp;
 	int scattertypes[111];
@@ -663,7 +643,7 @@ void __fastcall PlaceThemeMonsts(int t, int f)
 	mtype = scattertypes[random(0, numscattypes)];
 	for (yp = 0; yp < MAXDUNY; yp++) {
 		for (xp = 0; xp < MAXDUNX; xp++) {
-			if (dung_map[xp][yp] == themes[t].ttval && !nSolidTable[dPiece[xp][yp]] && dItem[xp][yp] == 0 && dObject[xp][yp] == 0) {
+			if (dTransVal[xp][yp] == themes[t].ttval && !nSolidTable[dPiece[xp][yp]] && dItem[xp][yp] == 0 && dObject[xp][yp] == 0) {
 				if (random(0, f) == 0) {
 					AddMonster(xp, yp, random(0, 8), mtype, 1);
 				}
@@ -676,7 +656,7 @@ void __fastcall PlaceThemeMonsts(int t, int f)
 //
 // Parameters:
 //    - t: theme number (index into themes array).
-void __fastcall Theme_Barrel(int t)
+void Theme_Barrel(int t)
 {
 	int xp, yp, r;
 	char barrnd[4] = { 2, 6, 4, 8 };
@@ -684,7 +664,7 @@ void __fastcall Theme_Barrel(int t)
 
 	for (yp = 0; yp < MAXDUNY; yp++) {
 		for (xp = 0; xp < MAXDUNX; xp++) {
-			if (dung_map[xp][yp] == themes[t].ttval && !nSolidTable[dPiece[xp][yp]]) {
+			if (dTransVal[xp][yp] == themes[t].ttval && !nSolidTable[dPiece[xp][yp]]) {
 				if (random(0, barrnd[leveltype - 1]) == 0) {
 					r = random(0, barrnd[leveltype - 1]) != 0;
 					r += OBJ_BARREL;
@@ -700,7 +680,7 @@ void __fastcall Theme_Barrel(int t)
 //
 // Parameters:
 //    - t: theme number (index into themes array).
-void __fastcall Theme_Shrine(int t)
+void Theme_Shrine(int t)
 {
 	char monstrnd[4] = { 6, 6, 3, 9 };
 
@@ -721,7 +701,7 @@ void __fastcall Theme_Shrine(int t)
 //
 // Parameters:
 //    - t: theme number (index into themes array).
-void __fastcall Theme_MonstPit(int t)
+void Theme_MonstPit(int t)
 {
 	int r;
 	int ixp, iyp;
@@ -732,7 +712,7 @@ void __fastcall Theme_MonstPit(int t)
 	iyp = 0;
 	if (r > 0) {
 		while (TRUE) {
-			if (dung_map[ixp][iyp] == themes[t].ttval && !nSolidTable[dPiece[ixp][iyp]]) {
+			if (dTransVal[ixp][iyp] == themes[t].ttval && !nSolidTable[dPiece[ixp][iyp]]) {
 				--r;
 			}
 			if (r <= 0) {
@@ -757,7 +737,7 @@ void __fastcall Theme_MonstPit(int t)
 //
 // Parameters:
 //    - t: theme number (index into themes array).
-void __fastcall Theme_SkelRoom(int t)
+void Theme_SkelRoom(int t)
 {
 	int xp, yp;
 	char monstrnd[4] = { 6, 7, 3, 9 };
@@ -810,7 +790,7 @@ void __fastcall Theme_SkelRoom(int t)
 //
 // Parameters:
 //    - t: theme number (index into themes array).
-void __fastcall Theme_Treasure(int t)
+void Theme_Treasure(int t)
 {
 	int xp, yp;
 	int i;
@@ -820,7 +800,7 @@ void __fastcall Theme_Treasure(int t)
 	GetRndSeed();
 	for (yp = 0; yp < MAXDUNY; yp++) {
 		for (xp = 0; xp < MAXDUNX; xp++) {
-			if (dung_map[xp][yp] == themes[t].ttval && !nSolidTable[dPiece[xp][yp]]) {
+			if (dTransVal[xp][yp] == themes[t].ttval && !nSolidTable[dPiece[xp][yp]]) {
 				int rv = random(0, treasrnd[leveltype - 1]);
 				// BUGFIX: the `2*` in `2*random(0, treasrnd...) == 0` has no effect, should probably be `random(0, 2*treasrnd...) == 0`
 				if ((2 * random(0, treasrnd[leveltype - 1])) == 0) {
@@ -847,7 +827,7 @@ void __fastcall Theme_Treasure(int t)
 //
 // Parameters:
 //    - t: theme number (index into themes array).
-void __fastcall Theme_Library(int t)
+void Theme_Library(int t)
 {
 	int xp, yp;
 	int oi;
@@ -891,7 +871,7 @@ void __fastcall Theme_Library(int t)
 //
 // Parameters:
 //    - t: theme number (index into themes array).
-void __fastcall Theme_Torture(int t)
+void Theme_Torture(int t)
 {
 	int xp, yp;
 	char tortrnd[4] = { 6, 8, 3, 8 };
@@ -899,7 +879,7 @@ void __fastcall Theme_Torture(int t)
 
 	for (yp = 1; yp < MAXDUNY - 1; yp++) {
 		for (xp = 1; xp < MAXDUNX - 1; xp++) {
-			if (dung_map[xp][yp] == themes[t].ttval && !nSolidTable[dPiece[xp][yp]]) {
+			if (dTransVal[xp][yp] == themes[t].ttval && !nSolidTable[dPiece[xp][yp]]) {
 				if (CheckThemeObj3(xp, yp, t, -1)) {
 					if (random(0, tortrnd[leveltype - 1]) == 0) {
 						AddObject(OBJ_TNUDEM2, xp, yp);
@@ -915,7 +895,7 @@ void __fastcall Theme_Torture(int t)
 //
 // Parameters:
 //    - t: theme number (index into themes array).
-void __fastcall Theme_BloodFountain(int t)
+void Theme_BloodFountain(int t)
 {
 	char monstrnd[4] = { 6, 8, 3, 9 };
 
@@ -928,7 +908,7 @@ void __fastcall Theme_BloodFountain(int t)
 //
 // Parameters:
 //    - t: theme number (index into themes array).
-void __fastcall Theme_Decap(int t)
+void Theme_Decap(int t)
 {
 	int xp, yp;
 	char decaprnd[4] = { 6, 8, 3, 8 };
@@ -936,7 +916,7 @@ void __fastcall Theme_Decap(int t)
 
 	for (yp = 1; yp < MAXDUNY - 1; yp++) {
 		for (xp = 1; xp < MAXDUNX - 1; xp++) {
-			if (dung_map[xp][yp] == themes[t].ttval && !nSolidTable[dPiece[xp][yp]]) {
+			if (dTransVal[xp][yp] == themes[t].ttval && !nSolidTable[dPiece[xp][yp]]) {
 				if (CheckThemeObj3(xp, yp, t, -1)) {
 					if (random(0, decaprnd[leveltype - 1]) == 0) {
 						AddObject(OBJ_DECAP, xp, yp);
@@ -952,7 +932,7 @@ void __fastcall Theme_Decap(int t)
 //
 // Parameters:
 //    - t: theme number (index into themes array).
-void __fastcall Theme_PurifyingFountain(int t)
+void Theme_PurifyingFountain(int t)
 {
 	char monstrnd[4] = { 6, 7, 3, 9 };
 
@@ -965,7 +945,7 @@ void __fastcall Theme_PurifyingFountain(int t)
 //
 // Parameters:
 //    - t: theme number (index into themes array).
-void __fastcall Theme_ArmorStand(int t)
+void Theme_ArmorStand(int t)
 {
 	int xp, yp;
 	char armorrnd[4] = { 6, 8, 3, 8 };
@@ -977,7 +957,7 @@ void __fastcall Theme_ArmorStand(int t)
 	}
 	for (yp = 0; yp < MAXDUNY; yp++) {
 		for (xp = 0; xp < MAXDUNX; xp++) {
-			if (dung_map[xp][yp] == themes[t].ttval && !nSolidTable[dPiece[xp][yp]]) {
+			if (dTransVal[xp][yp] == themes[t].ttval && !nSolidTable[dPiece[xp][yp]]) {
 				if (CheckThemeObj3(xp, yp, t, -1)) {
 					if (random(0, armorrnd[leveltype - 1]) == 0) {
 						AddObject(OBJ_ARMORSTANDN, xp, yp);
@@ -994,7 +974,7 @@ void __fastcall Theme_ArmorStand(int t)
 //
 // Parameters:
 //    - t: theme number (index into themes array).
-void __fastcall Theme_GoatShrine(int t)
+void Theme_GoatShrine(int t)
 {
 	int xx, yy;
 
@@ -1002,7 +982,7 @@ void __fastcall Theme_GoatShrine(int t)
 	AddObject(OBJ_GOATSHRINE, themex, themey);
 	for (yy = themey - 1; yy <= themey + 1; yy++) {
 		for (xx = themex - 1; xx <= themex + 1; xx++) {
-			if (dung_map[xx][yy] == themes[t].ttval && !nSolidTable[dPiece[xx][yy]] && (xx != themex || yy != themey)) {
+			if (dTransVal[xx][yy] == themes[t].ttval && !nSolidTable[dPiece[xx][yy]] && (xx != themex || yy != themey)) {
 				AddMonster(xx, yy, DIR_SW, themeVar1, 1);
 			}
 		}
@@ -1013,7 +993,7 @@ void __fastcall Theme_GoatShrine(int t)
 //
 // Parameters:
 //    - t: theme number (index into themes array).
-void __fastcall Theme_Cauldron(int t)
+void Theme_Cauldron(int t)
 {
 	char monstrnd[4] = { 6, 7, 3, 9 };
 
@@ -1026,7 +1006,7 @@ void __fastcall Theme_Cauldron(int t)
 //
 // Parameters:
 //    - t: theme number (index into themes array).
-void __fastcall Theme_MurkyFountain(int t)
+void Theme_MurkyFountain(int t)
 {
 	char monstrnd[4] = { 6, 7, 3, 9 };
 
@@ -1039,7 +1019,7 @@ void __fastcall Theme_MurkyFountain(int t)
 //
 // Parameters:
 //    - t: theme number (index into themes array).
-void __fastcall Theme_TearFountain(int t)
+void Theme_TearFountain(int t)
 {
 	char monstrnd[4] = { 6, 7, 3, 9 };
 
@@ -1052,7 +1032,7 @@ void __fastcall Theme_TearFountain(int t)
 //
 // Parameters:
 //    - t: theme number (index into themes array).
-void __fastcall Theme_BrnCross(int t)
+void Theme_BrnCross(int t)
 {
 	int xp, yp;
 	char monstrnd[4] = { 6, 8, 3, 9 };
@@ -1060,7 +1040,7 @@ void __fastcall Theme_BrnCross(int t)
 
 	for (yp = 0; yp < MAXDUNY; yp++) {
 		for (xp = 0; xp < MAXDUNX; xp++) {
-			if (dung_map[xp][yp] == themes[t].ttval && !nSolidTable[dPiece[xp][yp]]) {
+			if (dTransVal[xp][yp] == themes[t].ttval && !nSolidTable[dPiece[xp][yp]]) {
 				if (CheckThemeObj3(xp, yp, t, -1)) {
 					if (random(0, bcrossrnd[leveltype - 1]) == 0) {
 						AddObject(OBJ_TBCROSS, xp, yp);
@@ -1077,7 +1057,7 @@ void __fastcall Theme_BrnCross(int t)
 //
 // Parameters:
 //    - t: theme number (index into themes array).
-void __fastcall Theme_WeaponRack(int t)
+void Theme_WeaponRack(int t)
 {
 	int xp, yp;
 	char weaponrnd[4] = { 6, 8, 5, 8 };
@@ -1089,7 +1069,7 @@ void __fastcall Theme_WeaponRack(int t)
 	}
 	for (yp = 0; yp < MAXDUNY; yp++) {
 		for (xp = 0; xp < MAXDUNX; xp++) {
-			if (dung_map[xp][yp] == themes[t].ttval && !nSolidTable[dPiece[xp][yp]]) {
+			if (dTransVal[xp][yp] == themes[t].ttval && !nSolidTable[dPiece[xp][yp]]) {
 				if (CheckThemeObj3(xp, yp, t, -1)) {
 					if (random(0, weaponrnd[leveltype - 1]) == 0) {
 						AddObject(OBJ_WEAPONRACKN, xp, yp);
@@ -1103,21 +1083,21 @@ void __fastcall Theme_WeaponRack(int t)
 }
 
 // UpdateL4Trans sets each value of the transparency map to 1.
-void __cdecl UpdateL4Trans()
+void UpdateL4Trans()
 {
 	int i, j;
 
 	for (j = 0; j < MAXDUNY; j++) {
 		for (i = 0; i < MAXDUNX; i++) {
-			if (dung_map[i][j]) {
-				dung_map[i][j] = 1;
+			if (dTransVal[i][j]) {
+				dTransVal[i][j] = 1;
 			}
 		}
 	}
 }
 
 // CreateThemeRooms adds thematic elements to rooms.
-void __cdecl CreateThemeRooms()
+void CreateThemeRooms()
 {
 	int i;
 

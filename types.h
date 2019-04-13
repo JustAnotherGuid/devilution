@@ -26,15 +26,16 @@
 
 // tell Visual C++ to shut the hell up
 #ifdef _MSC_VER
-#pragma warning(disable : 4309) // truncation of constant value
 #pragma warning(disable : 4305) // truncation of int
 #pragma warning(disable : 4018) // signed/unsigned mismatch
 #pragma warning(disable : 4700) // used without having been initialized
-#pragma warning(disable : 4804) // unsafe use of type 'bool' in operation
-#pragma warning(disable : 4805) // unsafe bool mix
 #pragma warning(disable : 4244) // conversion loss
-#pragma warning(disable : 4800) // bool perf
 #pragma warning(disable : 4146) // negative unsigned
+#pragma warning(disable : 4996) // deprecation warning
+#pragma warning(disable : 4309) // VC2017: truncation of constant value
+#pragma warning(disable : 4267) // VC2017: conversion from 'size_t' to 'char'
+#pragma warning(disable : 4302) // VC2017: type cast truncation
+#pragma warning(disable : 4334) // VC2017: result of 32-bit shift implicitly converted to 64 bits
 #endif
 
 #include "defs.h"
@@ -47,13 +48,19 @@
 
 // If defined, use copy protection [Default -> Defined]
 //#define COPYPROT
+
 // If defined, don't reload for debuggers [Default -> Undefined]
 // Note that with patch 1.03 the command line was hosed, this is required to pass arguments to the game
 #ifdef _DEBUG
 #define DEBUGGER
 #endif
+
 // If defined, don't fry the CPU [Default -> Undefined]
-#define SLEEP
+#define SLEEPFIX
+
+// If defined, fix palette glitch in Windows Vista+ [Default -> Undefined]
+//#define COLORFIX
+
 // If defined, use standard memcpy() in place of qmemcpy() [Default -> Undefined]
 // Will be replaced with [rep movsd] if optimization is used
 #define FAST_MEMCPY

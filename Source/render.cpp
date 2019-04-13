@@ -11,24 +11,60 @@ unsigned int *gpDrawMask = NULL;
 // char world_4B326D[16] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
 unsigned int RightMask[32] = {
-	0xEAAAAAAA, 0xF5555555, 0xFEAAAAAA, 0xFF555555, 0xFFEAAAAA, 0xFFF55555, 0xFFFEAAAA, 0xFFFF5555,
-	0xFFFFEAAA, 0xFFFFF555, 0xFFFFFEAA, 0xFFFFFF55, 0xFFFFFFEA, 0xFFFFFFF5, 0xFFFFFFFE, 0xFFFFFFFF,
-	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF
+	0xEAAAAAAA, 0xF5555555,
+	0xFEAAAAAA, 0xFF555555,
+	0xFFEAAAAA, 0xFFF55555,
+	0xFFFEAAAA, 0xFFFF5555,
+	0xFFFFEAAA, 0xFFFFF555,
+	0xFFFFFEAA, 0xFFFFFF55,
+	0xFFFFFFEA, 0xFFFFFFF5,
+	0xFFFFFFFE, 0xFFFFFFFF,
+	0xFFFFFFFF, 0xFFFFFFFF,
+	0xFFFFFFFF, 0xFFFFFFFF,
+	0xFFFFFFFF, 0xFFFFFFFF,
+	0xFFFFFFFF, 0xFFFFFFFF,
+	0xFFFFFFFF, 0xFFFFFFFF,
+	0xFFFFFFFF, 0xFFFFFFFF,
+	0xFFFFFFFF, 0xFFFFFFFF,
+	0xFFFFFFFF, 0xFFFFFFFF
 };
 
 unsigned int LeftMask[32] = {
-	0xAAAAAAAB, 0x5555555F, 0xAAAAAABF, 0x555555FF, 0xAAAAABFF, 0x55555FFF, 0xAAAABFFF, 0x5555FFFF,
-	0xAAABFFFF, 0x555FFFFF, 0xAABFFFFF, 0x55FFFFFF, 0xABFFFFFF, 0x5FFFFFFF, 0xBFFFFFFF, 0xFFFFFFFF,
-	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF,
-	0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF
+	0xAAAAAAAB, 0x5555555F,
+	0xAAAAAABF, 0x555555FF,
+	0xAAAAABFF, 0x55555FFF,
+	0xAAAABFFF, 0x5555FFFF,
+	0xAAABFFFF, 0x555FFFFF,
+	0xAABFFFFF, 0x55FFFFFF,
+	0xABFFFFFF, 0x5FFFFFFF,
+	0xBFFFFFFF, 0xFFFFFFFF,
+	0xFFFFFFFF, 0xFFFFFFFF,
+	0xFFFFFFFF, 0xFFFFFFFF,
+	0xFFFFFFFF, 0xFFFFFFFF,
+	0xFFFFFFFF, 0xFFFFFFFF,
+	0xFFFFFFFF, 0xFFFFFFFF,
+	0xFFFFFFFF, 0xFFFFFFFF,
+	0xFFFFFFFF, 0xFFFFFFFF,
+	0xFFFFFFFF, 0xFFFFFFFF
 };
 
 unsigned int WallMask[32] = {
-	0xAAAAAAAA, 0x55555555, 0xAAAAAAAA, 0x55555555, 0xAAAAAAAA, 0x55555555, 0xAAAAAAAA, 0x55555555,
-	0xAAAAAAAA, 0x55555555, 0xAAAAAAAA, 0x55555555, 0xAAAAAAAA, 0x55555555, 0xAAAAAAAA, 0x55555555,
-	0xAAAAAAAA, 0x55555555, 0xAAAAAAAA, 0x55555555, 0xAAAAAAAA, 0x55555555, 0xAAAAAAAA, 0x55555555,
-	0xAAAAAAAA, 0x55555555, 0xAAAAAAAA, 0x55555555, 0xAAAAAAAA, 0x55555555, 0xAAAAAAAA, 0x55555555
+	0xAAAAAAAA, 0x55555555,
+	0xAAAAAAAA, 0x55555555,
+	0xAAAAAAAA, 0x55555555,
+	0xAAAAAAAA, 0x55555555,
+	0xAAAAAAAA, 0x55555555,
+	0xAAAAAAAA, 0x55555555,
+	0xAAAAAAAA, 0x55555555,
+	0xAAAAAAAA, 0x55555555,
+	0xAAAAAAAA, 0x55555555,
+	0xAAAAAAAA, 0x55555555,
+	0xAAAAAAAA, 0x55555555,
+	0xAAAAAAAA, 0x55555555,
+	0xAAAAAAAA, 0x55555555,
+	0xAAAAAAAA, 0x55555555,
+	0xAAAAAAAA, 0x55555555,
+	0xAAAAAAAA, 0x55555555
 };
 
 int WorldTbl3x16[48] = {
@@ -80,7 +116,7 @@ int WorldTbl17_2[17] = { 0, 32, 60, 88, 112, 136, 156, 176, 192, 208, 220, 232, 
 #if (_MSC_VER >= 800) && (_MSC_VER <= 1200)
 #include "_render.cpp"
 #else
-void __fastcall drawTopArchesUpperScreen(BYTE *pBuff)
+void drawTopArchesUpperScreen(BYTE *pBuff)
 {
 	unsigned char *dst;        // edi MAPDST
 	unsigned char *tbl;        // ebx
@@ -109,7 +145,7 @@ void __fastcall drawTopArchesUpperScreen(BYTE *pBuff)
 	if ((_BYTE)light_table_index != lightmax) {
 		if (!(level_cel_block & 0x8000)) {
 			src = (unsigned char *)pDungeonCels + *((_DWORD *)pDungeonCels + (level_cel_block & 0xFFF));
-			tbl = (unsigned char *)&pLightTbl[256 * light_table_index];
+			tbl = &pLightTbl[256 * light_table_index];
 			cel_type_16 = (unsigned char)(level_cel_block >> 12);
 			switch (cel_type_16) {
 			case 0: // upper (top transparent), with lighting
@@ -1106,7 +1142,7 @@ void __fastcall drawTopArchesUpperScreen(BYTE *pBuff)
 	}
 }
 
-void __fastcall drawBottomArchesUpperScreen(BYTE *pBuff, unsigned int *pMask)
+void drawBottomArchesUpperScreen(BYTE *pBuff, unsigned int *pMask)
 {
 	unsigned char *dst;        // edi MAPDST
 	unsigned char *src;        // esi MAPDST
@@ -1364,7 +1400,7 @@ void __fastcall drawBottomArchesUpperScreen(BYTE *pBuff, unsigned int *pMask)
 	if ((_BYTE)light_table_index != lightmax) {
 		if (!(level_cel_block & 0x8000)) {
 			src = (unsigned char *)pDungeonCels + *((_DWORD *)pDungeonCels + (level_cel_block & 0xFFF));
-			tbl = (unsigned char *)&pLightTbl[256 * light_table_index];
+			tbl = &pLightTbl[256 * light_table_index];
 			cel_type_16 = (unsigned char)(level_cel_block >> 12);
 			switch (cel_type_16) {
 			case 0: // upper (bottom transparent), with lighting
@@ -1740,7 +1776,7 @@ void __fastcall drawBottomArchesUpperScreen(BYTE *pBuff, unsigned int *pMask)
 	}
 }
 
-void __fastcall drawUpperScreen(BYTE *pBuff)
+void drawUpperScreen(BYTE *pBuff)
 {
 	unsigned char *dst;        // edi MAPDST
 	unsigned char *tbl;        // ebx
@@ -2005,7 +2041,7 @@ void __fastcall drawUpperScreen(BYTE *pBuff)
 	if ((_BYTE)light_table_index != lightmax) {
 		if (!(level_cel_block & 0x8000)) {
 			src = (unsigned char *)pDungeonCels + *((_DWORD *)pDungeonCels + (level_cel_block & 0xFFF));
-			tbl = (unsigned char *)&pLightTbl[256 * light_table_index];
+			tbl = &pLightTbl[256 * light_table_index];
 			cel_type_16 = (unsigned short)level_cel_block >> 12;
 			switch (cel_type_16) {
 			case 0: // upper (solid), with lighting
@@ -2360,7 +2396,7 @@ void __fastcall drawUpperScreen(BYTE *pBuff)
 	}
 }
 
-void __fastcall drawTopArchesLowerScreen(BYTE *pBuff)
+void drawTopArchesLowerScreen(BYTE *pBuff)
 {
 	unsigned char *dst;        // edi MAPDST
 	unsigned char *tbl;        // ebx
@@ -2834,7 +2870,7 @@ void __fastcall drawTopArchesLowerScreen(BYTE *pBuff)
 	}
 	if (!(level_cel_block & 0x8000)) {
 		src = (unsigned char *)pDungeonCels + *((_DWORD *)pDungeonCels + (level_cel_block & 0xFFF));
-		tbl = (unsigned char *)&pLightTbl[256 * light_table_index];
+		tbl = &pLightTbl[256 * light_table_index];
 		cel_type_16 = (unsigned char)(level_cel_block >> 12);
 		switch (cel_type_16) {
 		case 0: // lower (top transparent), with lighting
@@ -3599,7 +3635,7 @@ LABEL_11:
 	}
 }
 
-void __fastcall drawBottomArchesLowerScreen(BYTE *pBuff, unsigned int *pMask)
+void drawBottomArchesLowerScreen(BYTE *pBuff, unsigned int *pMask)
 {
 	unsigned char *dst;        // edi MAPDST
 	short cel_type_16;         // ax MAPDST
@@ -3882,7 +3918,7 @@ void __fastcall drawBottomArchesLowerScreen(BYTE *pBuff, unsigned int *pMask)
 		}
 		if (!(level_cel_block & 0x8000)) {
 			src = (unsigned char *)pDungeonCels + *((_DWORD *)pDungeonCels + (level_cel_block & 0xFFF));
-			tbl = (unsigned char *)&pLightTbl[256 * light_table_index];
+			tbl = &pLightTbl[256 * light_table_index];
 			cel_type_16 = (unsigned char)(level_cel_block >> 12);
 			switch (cel_type_16) {
 			case 0: // lower (bottom transparent), with lighting
@@ -4393,7 +4429,7 @@ void __fastcall drawBottomArchesLowerScreen(BYTE *pBuff, unsigned int *pMask)
 	}
 }
 
-void __fastcall drawLowerScreen(BYTE *pBuff)
+void drawLowerScreen(BYTE *pBuff)
 {
 	unsigned char *dst;        // edi MAPDST
 	unsigned char *src;        // esi MAPDST
@@ -4684,7 +4720,7 @@ void __fastcall drawLowerScreen(BYTE *pBuff)
 		}
 		if (!(level_cel_block & 0x8000)) {
 			src = (unsigned char *)pDungeonCels + *((_DWORD *)pDungeonCels + (level_cel_block & 0xFFF));
-			tbl = (unsigned char *)&pLightTbl[256 * light_table_index];
+			tbl = &pLightTbl[256 * light_table_index];
 			cel_type_16 = (unsigned short)level_cel_block >> 12;
 			switch (cel_type_16) {
 			case 0: // lower (solid), with lighting
@@ -5173,7 +5209,7 @@ void __fastcall drawLowerScreen(BYTE *pBuff)
 	}
 }
 
-void __fastcall world_draw_black_tile(BYTE *pBuff)
+void world_draw_black_tile(BYTE *pBuff)
 {
 	unsigned char *dst; // edi MAPDST
 	signed int xx_32;   // edx

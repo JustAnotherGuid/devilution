@@ -10,10 +10,10 @@ PkPlayerStruct netplr[MAX_PLRS];
 BYTE sgbPlayerTurnBitTbl[MAX_PLRS];
 char sgbPlayerLeftGameTbl[MAX_PLRS];
 int sgbSentThisCycle; // idb
-int dword_678628;     // weak
+BOOL gbShouldValidatePackage;
 BYTE gbActivePlayers; // weak
 char gbGameDestroyed; // weak
-char sgbSendDeltaTbl[MAX_PLRS];
+BOOLEAN sgbSendDeltaTbl[MAX_PLRS];
 _gamedata sgGameInitInfo;
 char byte_678640;    // weak
 int sglTimeoutStart; // weak
@@ -21,7 +21,7 @@ int sgdwPlayerLeftReasonTbl[MAX_PLRS];
 TBuffer sgLoPriBuf;
 unsigned int sgdwGameLoops; // idb
 BYTE gbMaxPlayers;
-char sgbTimeout; // weak
+BOOLEAN sgbTimeout;
 char szPlayerName[128];
 BYTE gbDeltaSender;
 int sgbNetInited; // weak
@@ -33,7 +33,7 @@ const int event_types[3] = {
 	EVENT_TYPE_PLAYER_MESSAGE
 };
 
-void __fastcall multi_msg_add(BYTE *a1, unsigned char a2)
+void multi_msg_add(BYTE *a1, unsigned char a2)
 {
 	if (a1) {
 		if (a2)
@@ -41,7 +41,7 @@ void __fastcall multi_msg_add(BYTE *a1, unsigned char a2)
 	}
 }
 
-void __fastcall NetSendLoPri(BYTE *pbMsg, BYTE bLen)
+void NetSendLoPri(BYTE *pbMsg, BYTE bLen)
 {
 	if (pbMsg) {
 		if (bLen) {
@@ -51,7 +51,7 @@ void __fastcall NetSendLoPri(BYTE *pbMsg, BYTE bLen)
 	}
 }
 
-void __fastcall multi_copy_packet(TBuffer *a1, void *packet, BYTE size)
+void multi_copy_packet(TBuffer *a1, void *packet, BYTE size)
 {
 	DWORD v3; // eax
 	DWORD v4; // ebx
@@ -68,7 +68,7 @@ void __fastcall multi_copy_packet(TBuffer *a1, void *packet, BYTE size)
 	}
 }
 
-void __fastcall multi_send_packet(void *packet, BYTE dwSize)
+void multi_send_packet(void *packet, BYTE dwSize)
 {
 	TPkt pkt;
 
@@ -79,7 +79,7 @@ void __fastcall multi_send_packet(void *packet, BYTE dwSize)
 		nthread_terminate_game("SNetSendMessage0");
 }
 
-void __fastcall NetRecvPlrData(TPkt *pkt)
+void NetRecvPlrData(TPkt *pkt)
 {
 	pkt->hdr.wCheck = 'ip';
 	pkt->hdr.px = plr[myplr].WorldX;
@@ -93,10 +93,10 @@ void __fastcall NetRecvPlrData(TPkt *pkt)
 	pkt->hdr.bdex = plr[myplr]._pBaseDex;
 }
 
-void __fastcall NetSendHiPri(BYTE *pbMsg, BYTE bLen)
+void NetSendHiPri(BYTE *pbMsg, BYTE bLen)
 {
 	unsigned char *v5; // eax
-	TSyncHeader *v6;   // eax
+	BYTE *v6;          // eax
 	int v7;            // eax
 	int v8;            // eax
 	TPkt pkt;          // [esp+Ch] [ebp-204h]
@@ -106,12 +106,12 @@ void __fastcall NetSendHiPri(BYTE *pbMsg, BYTE bLen)
 		multi_copy_packet(&sgHiPriBuf, pbMsg, bLen);
 		multi_send_packet(pbMsg, bLen);
 	}
-	if (!dword_678628) {
-		dword_678628 = 1;
+	if (!gbShouldValidatePackage) {
+		gbShouldValidatePackage = TRUE;
 		NetRecvPlrData(&pkt);
 		size = gdwNormalMsgSize - 19;
 		v5 = multi_recv_packet(&sgHiPriBuf, pkt.body, &size);
-		v6 = (TSyncHeader *)multi_recv_packet(&sgLoPriBuf, v5, &size);
+		v6 = multi_recv_packet(&sgLoPriBuf, v5, &size);
 		v7 = sync_all_monsters(v6, size);
 		v8 = gdwNormalMsgSize - v7;
 		pkt.hdr.wLen = v8;
@@ -119,10 +119,9 @@ void __fastcall NetSendHiPri(BYTE *pbMsg, BYTE bLen)
 			nthread_terminate_game("SNetSendMessage");
 	}
 }
-// 678628: using guessed type int dword_678628;
 // 679760: using guessed type int gdwNormalMsgSize;
 
-unsigned char *__fastcall multi_recv_packet(TBuffer *packet, unsigned char *a2, int *a3)
+unsigned char *multi_recv_packet(TBuffer *packet, unsigned char *a2, int *a3)
 {
 	TBuffer *v3;           // esi
 	unsigned char *result; // eax
@@ -153,7 +152,7 @@ unsigned char *__fastcall multi_recv_packet(TBuffer *packet, unsigned char *a2, 
 	return result;
 }
 
-void __fastcall multi_send_msg_packet(int a1, BYTE *a2, BYTE len)
+void multi_send_msg_packet(int a1, BYTE *a2, BYTE len)
 {
 	//const void *v3; // edx
 	signed int v4;   // ebx
@@ -180,7 +179,7 @@ void __fastcall multi_send_msg_packet(int a1, BYTE *a2, BYTE len)
 	nthread_terminate_game("SNetSendMessage");
 }
 
-void __cdecl multi_msg_countdown()
+void multi_msg_countdown()
 {
 	int v0; // esi
 
@@ -194,7 +193,7 @@ void __cdecl multi_msg_countdown()
 	} while (v0 < MAX_PLRS);
 }
 
-void __fastcall multi_parse_turn(int pnum, int turn)
+void multi_parse_turn(int pnum, int turn)
 {
 	int v2;          // esi
 	unsigned int v3; // esi
@@ -213,7 +212,7 @@ void __fastcall multi_parse_turn(int pnum, int turn)
 // 679704: using guessed type char byte_679704;
 // 679738: using guessed type int gdwTurnsInTransit;
 
-void __fastcall multi_handle_turn_upper_bit(int pnum)
+void multi_handle_turn_upper_bit(int pnum)
 {
 	signed int v1; // eax
 
@@ -224,21 +223,21 @@ void __fastcall multi_handle_turn_upper_bit(int pnum)
 		++v1;
 	} while (v1 < MAX_PLRS);
 	if (myplr == v1) {
-		sgbSendDeltaTbl[pnum] = 1;
+		sgbSendDeltaTbl[pnum] = TRUE;
 	} else if (myplr == pnum) {
 		gbDeltaSender = v1;
 	}
 }
 // 6796E4: using guessed type char gbDeltaSender;
 
-void __fastcall multi_player_left(int pnum, int reason)
+void multi_player_left(int pnum, int reason)
 {
 	sgbPlayerLeftGameTbl[pnum] = 1;
 	sgdwPlayerLeftReasonTbl[pnum] = reason;
 	multi_clear_left_tbl();
 }
 
-void __cdecl multi_clear_left_tbl()
+void multi_clear_left_tbl()
 {
 	int v0; // esi
 
@@ -257,7 +256,7 @@ void __cdecl multi_clear_left_tbl()
 }
 // 676194: using guessed type char gbBufferMsgs;
 
-void __fastcall multi_player_left_msg(int pnum, int left)
+void multi_player_left_msg(int pnum, int left)
 {
 	int v2;   // edi
 	int v3;   // ebx
@@ -293,61 +292,58 @@ void __fastcall multi_player_left_msg(int pnum, int left)
 }
 // 6761B8: using guessed type char gbSomebodyWonGameKludge;
 
-void __cdecl multi_net_ping()
+void multi_net_ping()
 {
-	sgbTimeout = 1;
+	sgbTimeout = TRUE;
 	sglTimeoutStart = GetTickCount();
 }
 // 678644: using guessed type int sglTimeoutStart;
-// 679661: using guessed type char sgbTimeout;
 
-int __cdecl multi_handle_delta()
+int multi_handle_delta()
 {
-	int v0;       // esi
-	int recieved; // [esp+4h] [ebp-4h]
+	int i, recieved;
 
 	if (gbGameDestroyed) {
 		gbRunGame = FALSE;
-		return 0;
+		return FALSE;
 	}
-	v0 = 0;
-	do {
-		if (sgbSendDeltaTbl[v0]) {
-			sgbSendDeltaTbl[v0] = 0;
-			DeltaExportData(v0);
+
+	for (i = 0; i < MAX_PLRS; i++) {
+		if (sgbSendDeltaTbl[i]) {
+			sgbSendDeltaTbl[i] = FALSE;
+			DeltaExportData(i);
 		}
-		++v0;
-	} while (v0 < MAX_PLRS);
+	}
+
 	sgbSentThisCycle = nthread_send_and_recv_turn(sgbSentThisCycle, 1);
 	if (!nthread_recv_turns(&recieved)) {
 		multi_begin_timeout();
-		return 0;
+		return FALSE;
 	}
-	sgbTimeout = 0;
+
+	sgbTimeout = FALSE;
 	if (recieved) {
-		if (dword_678628) {
-			dword_678628 = 0;
+		if (!gbShouldValidatePackage) {
+			NetSendHiPri(0, 0);
+			gbShouldValidatePackage = FALSE;
+		} else {
+			gbShouldValidatePackage = FALSE;
 			if (!multi_check_pkt_valid(&sgHiPriBuf))
 				NetSendHiPri(0, 0);
-		} else {
-			NetSendHiPri(0, 0);
-			dword_678628 = 0;
 		}
 	}
 	multi_mon_seeds();
-	return 1;
+
+	return TRUE;
 }
-// 678628: using guessed type int dword_678628;
-// 67862D: using guessed type char gbGameDestroyed;
-// 679661: using guessed type char sgbTimeout;
 
 // Microsoft VisualC 2-11/net runtime
-int __fastcall multi_check_pkt_valid(TBuffer *a1)
+int multi_check_pkt_valid(TBuffer *a1)
 {
 	return a1->dwNextWriteOffset == 0;
 }
 
-void __cdecl multi_mon_seeds()
+void multi_mon_seeds()
 {
 	int i;
 	DWORD l;
@@ -358,7 +354,7 @@ void __cdecl multi_mon_seeds()
 		monster[i]._mAISeed = l + i;
 }
 
-void __cdecl multi_begin_timeout()
+void multi_begin_timeout()
 {
 	unsigned char bGroupPlayers; // bl
 	signed int v1;               // eax
@@ -413,7 +409,7 @@ void __cdecl multi_begin_timeout()
 // 678644: using guessed type int sglTimeoutStart;
 // 679661: using guessed type char sgbTimeout;
 
-void __cdecl multi_check_drop_player()
+void multi_check_drop_player()
 {
 	int v0; // esi
 	int v1; // eax
@@ -429,7 +425,7 @@ void __cdecl multi_check_drop_player()
 	} while (v0 < MAX_PLRS);
 }
 
-void __cdecl multi_process_network_packets()
+void multi_process_network_packets()
 {
 	//int v0; // eax
 	TPktHdr *v1;       // ecx
@@ -524,7 +520,7 @@ void __cdecl multi_process_network_packets()
 // 676194: using guessed type char gbBufferMsgs;
 // 676198: using guessed type int pkt_counter;
 
-void __fastcall multi_handle_all_packets(int players, TPkt *packet, int a3)
+void multi_handle_all_packets(int players, TPkt *packet, int a3)
 {
 	TCmd *v3; // esi
 	int i;    // edi
@@ -539,20 +535,17 @@ void __fastcall multi_handle_all_packets(int players, TPkt *packet, int a3)
 	}
 }
 
-void __cdecl multi_process_tmsgs()
+void multi_process_tmsgs()
 {
-	int v0;   // eax
-	TPkt pkt; // [esp+0h] [ebp-200h]
+	int cnt;
+	TPkt pkt;
 
-	while (1) {
-		v0 = tmsg_get((BYTE *)&pkt, 512);
-		if (!v0)
-			break;
-		multi_handle_all_packets(myplr, &pkt, v0);
+	while (cnt = tmsg_get((BYTE *)&pkt, 512)) {
+		multi_handle_all_packets(myplr, &pkt, cnt);
 	}
 }
 
-void __fastcall multi_send_zero_packet(int pnum, char a2, void *pbSrc, int dwLen)
+void multi_send_zero_packet(int pnum, char a2, void *pbSrc, int dwLen)
 {
 	unsigned int v4;       // edi
 	short v5;              // si
@@ -595,7 +588,7 @@ void __fastcall multi_send_zero_packet(int pnum, char a2, void *pbSrc, int dwLen
 }
 // 67975C: using guessed type int gdwLargestMsgSize;
 
-void __cdecl NetClose()
+void NetClose()
 {
 	if (sgbNetInited) {
 		sgbNetInited = 0;
@@ -612,7 +605,7 @@ void __cdecl NetClose()
 // 679660: using guessed type char gbMaxPlayers;
 // 6796E8: using guessed type int sgbNetInited;
 
-char __fastcall multi_event_handler(int a1)
+char multi_event_handler(int a1)
 {
 	int v1;                                                       // edi
 	void *(__stdcall * v2)(int, void(__stdcall *)(_SNETEVENT *)); // ebx
@@ -659,7 +652,7 @@ void __stdcall multi_handle_events(_SNETEVENT *pEvt)
 		sgdwPlayerLeftReasonTbl[pEvt->playerid] = v1;
 		if (v1 == 0x40000004)
 			gbSomebodyWonGameKludge = 1;
-		sgbSendDeltaTbl[pEvt->playerid] = 0;
+		sgbSendDeltaTbl[pEvt->playerid] = FALSE;
 		dthread_remove_player(pEvt->playerid);
 		if (gbDeltaSender == pEvt->playerid)
 			gbDeltaSender = 4;
@@ -672,7 +665,7 @@ void __stdcall multi_handle_events(_SNETEVENT *pEvt)
 // 6761B8: using guessed type char gbSomebodyWonGameKludge;
 // 6796E4: using guessed type char gbDeltaSender;
 
-int __fastcall NetInit(int bSinglePlayer, int *pfExitProgram)
+int NetInit(int bSinglePlayer, int *pfExitProgram)
 {
 	int v2; // ebx
 	int v4; // eax
@@ -711,18 +704,18 @@ int __fastcall NetInit(int bSinglePlayer, int *pfExitProgram)
 		memset(&UiData, 0, 0x50u);
 		UiData.size = 80;
 		UiData.parentwindow = SDrawGetFrameWindow(NULL);
-		UiData.artcallback = (void(__cdecl *)())UiArtCallback;
-		UiData.createcallback = (void(__cdecl *)())UiCreateGameCallback;
-		UiData.drawdesccallback = (void(__cdecl *)())UiDrawDescCallback;
-		UiData.messageboxcallback = (void(__cdecl *)())UiMessageBoxCallback;
-		UiData.soundcallback = (void(__cdecl *)())UiSoundCallback;
-		UiData.authcallback = (void(__cdecl *)())UiAuthCallback;
-		UiData.getdatacallback = (void(__cdecl *)())UiGetDataCallback;
-		UiData.categorycallback = (void(__cdecl *)())UiCategoryCallback;
+		UiData.artcallback = (void(*)())UiArtCallback;
+		UiData.createcallback = (void(*)())UiCreateGameCallback;
+		UiData.drawdesccallback = (void(*)())UiDrawDescCallback;
+		UiData.messageboxcallback = (void(*)())UiMessageBoxCallback;
+		UiData.soundcallback = (void(*)())UiSoundCallback;
+		UiData.authcallback = (void(*)())UiAuthCallback;
+		UiData.getdatacallback = (void(*)())UiGetDataCallback;
+		UiData.categorycallback = (void(*)())UiCategoryCallback;
 		UiData.selectnamecallback = mainmenu_select_hero_dialog;
-		UiData.changenamecallback = (void(__cdecl *)())mainmenu_create_hero;
-		UiData.profilebitmapcallback = UiProfileDraw;
-		UiData.profilecallback = UiProfileCallback;
+		UiData.changenamecallback = (void(*)())mainmenu_create_hero;
+		UiData.profilebitmapcallback = (void(*)())UiProfileDraw;
+		UiData.profilecallback = (void(*)())UiProfileCallback;
 		UiData.profilefields = UiProfileGetString();
 		memset(sgbPlayerTurnBitTbl, 0, 4u);
 		gbGameDestroyed = 0;
@@ -744,8 +737,8 @@ int __fastcall NetInit(int bSinglePlayer, int *pfExitProgram)
 		InitPlrMsg();
 		buffer_init(&sgHiPriBuf);
 		buffer_init(&sgLoPriBuf);
-		dword_678628 = 0;
-		sync_clear_pkt();
+		gbShouldValidatePackage = FALSE;
+		sync_init();
 		nthread_start(sgbPlayerTurnBitTbl[myplr]);
 		dthread_start();
 		MI_Dummy(0); /* v5 */
@@ -780,20 +773,18 @@ int __fastcall NetInit(int bSinglePlayer, int *pfExitProgram)
 	return 1;
 }
 // 6761B8: using guessed type char gbSomebodyWonGameKludge;
-// 678628: using guessed type int dword_678628;
 // 67862D: using guessed type char gbGameDestroyed;
 // 678640: using guessed type char byte_678640;
-// 679661: using guessed type char sgbTimeout;
 // 6796E4: using guessed type char gbDeltaSender;
 // 6796E8: using guessed type int sgbNetInited;
 
-void __fastcall buffer_init(TBuffer *pBuf)
+void buffer_init(TBuffer *pBuf)
 {
 	pBuf->dwNextWriteOffset = 0;
 	pBuf->bData[0] = 0;
 }
 
-void __fastcall multi_send_pinfo(int pnum, char cmd)
+void multi_send_pinfo(int pnum, char cmd)
 {
 	char v2;              // bl
 	int v3;               // esi
@@ -805,7 +796,7 @@ void __fastcall multi_send_pinfo(int pnum, char cmd)
 	dthread_send_delta(v3, v2, &pkplr, 1266);
 }
 
-int __fastcall InitNewSeed(int newseed)
+int InitNewSeed(int newseed)
 {
 	int result; // eax
 
@@ -826,7 +817,7 @@ int __fastcall InitNewSeed(int newseed)
 	return result;
 }
 
-void __cdecl SetupLocalCoords()
+void SetupLocalCoords()
 {
 	int x; // ecx
 	int y; // edx
@@ -862,7 +853,7 @@ void __cdecl SetupLocalCoords()
 // 5CF31D: using guessed type char setlevel;
 // 679660: using guessed type char gbMaxPlayers;
 
-BOOL __fastcall multi_init_single(_SNETPROGRAMDATA *client_info, _SNETPLAYERDATA *user_info, _SNETUIDATA *ui_info)
+BOOL multi_init_single(_SNETPROGRAMDATA *client_info, _SNETPLAYERDATA *user_info, _SNETUIDATA *ui_info)
 {
 	int unused;
 
@@ -883,7 +874,7 @@ BOOL __fastcall multi_init_single(_SNETPROGRAMDATA *client_info, _SNETPLAYERDATA
 }
 // 679660: using guessed type char gbMaxPlayers;
 
-BOOL __fastcall multi_init_multi(_SNETPROGRAMDATA *client_info, _SNETPLAYERDATA *user_info, _SNETUIDATA *ui_info, int *pfExitProgram)
+BOOL multi_init_multi(_SNETPROGRAMDATA *client_info, _SNETPLAYERDATA *user_info, _SNETUIDATA *ui_info, int *pfExitProgram)
 {
 	BOOL first;
 	int playerId;
@@ -924,7 +915,7 @@ BOOL __fastcall multi_init_multi(_SNETPROGRAMDATA *client_info, _SNETPLAYERDATA 
 // 678640: using guessed type char byte_678640;
 // 679660: using guessed type char gbMaxPlayers;
 
-BOOL __fastcall multi_upgrade(int *pfExitProgram)
+BOOL multi_upgrade(int *pfExitProgram)
 {
 	BOOL result;
 	int status;
@@ -946,7 +937,7 @@ BOOL __fastcall multi_upgrade(int *pfExitProgram)
 	return result;
 }
 
-void __fastcall multi_player_joins(int pnum, TCmdPlrInfoHdr *cmd, int a3)
+void multi_player_joins(int pnum, TCmdPlrInfoHdr *cmd, int a3)
 {
 	int v3;             // ebx
 	TCmdPlrInfoHdr *v4; // edi
